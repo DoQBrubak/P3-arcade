@@ -109,4 +109,4 @@
         onReady: onReady,
         isReady: isReady
     };
-})();
+}());

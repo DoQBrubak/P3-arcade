@@ -34,9 +34,7 @@ var Engine = (function(global) {
      */
     function main() {
         
-        /* First determine time delta. This will be used to cope for users' 
-         * differnt processing speeds. 
-         */
+        // Determine time delta, which copes for diffeing processing speeds. 
         var now = Date.now(),  // refer: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
             dt = (now - lastTime) / 1000.0;
 
@@ -64,17 +62,32 @@ var Engine = (function(global) {
     function init() {
         reset();
         lastTime = Date.now();
+        allEnemies.push(new Enemy);
         main();
     }
 
-    /* This is called by main() and itself calls all functions used to 
+    /* This is called by main(). This  calls all functions used to 
      * update entities' data. Use of checkCollisions() is optional based on 
      * how I choose to deal with entity collisions.
      */
     function update(dt) {
+        spawnEnemies();
         updateEntities(dt);
         // checkCollisions();
     }
+
+
+    function spawnEnemies(){
+        if (allEnemies[0].loc.x > 600) {
+            allEnemies.shift()
+        } else if (allEnemies[0].loc.x < 0) {
+            allEnemies.shift()
+        };
+        if(allEnemies.length < 10){
+            allEnemies.push(new Enemy)
+        };
+    };
+
 
     /* This is called by update() and loops through all of the objects within 
      * your allEnemies array as defined in app.js and calls their update() 
@@ -122,9 +135,11 @@ var Engine = (function(global) {
                  * so that we get the benefits of caching these images, since
                  * we're using them over and over.
                  */
-                ctx.drawImage(Resources.get(rowImages[row]),
-                                            col * settings.grid.colWidth,
-                                            row * settings.grid.rowHeight);
+                ctx.drawImage(
+                    Resources.get(rowImages[row]),
+                    col * settings.grid.colWidth,
+                    row * settings.grid.rowHeight
+                );
             }
         }
 
@@ -140,8 +155,8 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
-        allEnemies.forEach(function(enemy) {
-            enemy.render();
+        allEnemies.forEach(function(item) {
+            item.render();
         });
 
         player.render();

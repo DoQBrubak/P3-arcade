@@ -17,14 +17,13 @@ Array.prototype.pickRand = function() {
  * more appropriately located in engine.js
  */
 var settings = {
-    enemyImgUrl: 'images/enemy-bug-%direction%.png',
-    enemySpeed: 5,
+    enemyImgUrl: 'images/enemy-bug-%data-direction%.png', // This will be modified based on random directionality.
     playerImgUrl: 'images/char-boy.png',
     playerStartLoc: {x:0,y:0},
     grid: {
         colOffset: 0,
         colWidth: 101,
-        rowOffset: 0,
+        rowOffset: 58,
         rowHeight: 83,
         numRows: 6,
         numCols: 6,
@@ -88,31 +87,31 @@ Player.prototype.update = function() {
  */
 
 var Enemy = function () {
-    // I think this might be an IFFE..?
-    (function() {
-        // Enemy bugs have directionality.
-        direction = ['left','right'].pickRand();
-        // Left- and right-oriented sprite files exist to choose from.
-        imgUrl = settings.enemyImgUrl.replace('%direction%', direction);
-        // Initial x coordinate is dependent on the directionality.
-        xInit = (function() {
-            if (direction=='right')
-                {return settings.grid.Xmin}//  0}
-            else
-                {return settings.grid.Xmax}}
-        ());
-        // Initial y coordinate is randomized to a row.
-        yInit = 58 + 83 * [0,1,2,3].pickRand();
-    })();
-    Character.call(this, imgUrl, {x:xInit,y:yInit});
+    // Each new enemy has random directionality.
+    var direction = ['left','right'].pickRand(); 
+    // Starting x coordinate depends on the directionality.
+    var xInit = direction == 'right' ? settings.grid.Xmin - 100 : settings.grid.Xmax + 100;
+    // Starting y coordinate corresponds to a random row.
+    var yInit = settings.grid.rowOffset + settings.grid.rowHeight * [0,1,2,3].pickRand();
+    // Each enemy sprite loaded based on directionality.
+    var imgUrl = imgUrl = settings.enemyImgUrl.replace('%data-direction%', direction);
+    // Each enemy speed depends on directionality and a random factor.
+    var speed = (direction == 'right' ? 1 : -1) * [1,1,2,2,2,3,3,4,5].pickRand();
+    
+    // Call the superclass to build out an instance
+    Character.call(this, imgUrl, {x:xInit,y:yInit}); 
+    // Some variables from the constructor survive as permanent properties.
+    this.direction = direction;
+    this.speed = speed;
+    console.log(this);
 };
 
 Enemy.prototype = Object.create(Character.prototype);
 Enemy.prototype.constructor = Enemy;
 
 Enemy.prototype.update = function() {
-    //this.loc.x += settings.enemySpeed;
-    //console.log("xInit: "+ xInit);
+    this.loc.x += this.speed;
+
 };
 
 
@@ -120,9 +119,7 @@ Enemy.prototype.update = function() {
 
 // allEnemies contains all of the Enemy instances
 var allEnemies = [];
-for (i=0; i<8; i++) {
-    allEnemies.push(new Enemy());
-}
+
 
 // The 'new' keyword is used, per Pseudoclassical inheritance.
 var player = new Player();
