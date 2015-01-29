@@ -22,10 +22,10 @@ var settings = {
     playerImgUrl: 'images/char-boy.png',
     playerStartLoc: {x:0,y:0},
     grid: {
-        colOffset: 10,
-        colWidth: 10,
+        colOffset: 0,
+        colWidth: 101,
         rowOffset: 0,
-        rowHeight: 0,
+        rowHeight: 83,
         numRows: 6,
         numCols: 6,
         Xmin: 0,

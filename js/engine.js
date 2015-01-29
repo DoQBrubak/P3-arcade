@@ -116,14 +116,15 @@ var Engine = (function(global) {
          */
         for (row = 0; row < settings.grid.numRows; row++) {
             for (col = 0; col < settings.grid.numCols; col++) {
-                /* The drawImage function of the canvas' context element
-                 * requires 3 parameters: the image to draw, the x coordinate
-                 * to start drawing and the y coordinate to start drawing.
+                /* ctx.drawImage() requires 3 parameters: the image to draw, 
+                 * the x and y coordinates (top left corner). 
                  * We're using our Resources helpers to refer to our images
                  * so that we get the benefits of caching these images, since
                  * we're using them over and over.
                  */
-                ctx.drawImage(Resources.get(rowImages[row]), col * 101, row * 83);
+                ctx.drawImage(Resources.get(rowImages[row]),
+                                            col * settings.grid.colWidth,
+                                            row * settings.grid.rowHeight);
             }
         }
 
