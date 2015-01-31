@@ -25,15 +25,15 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime;
 
-    canvas.width = 606;
-    canvas.height = 606;
+    //canvas.width = config.grid.numCols * config.grid.colWidth;
+    canvas.width = config.grid.xMax;
+    canvas.height = config.grid.rowOffset + config.grid.numRows * config.grid.rowHeight;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
      * and handles properly calling the update and render methods.
      */
     function main() {
-        
         // Determine time delta, which copes for diffeing processing speeds. 
         var now = Date.now(),  // refer: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
             dt = (now - lastTime) / 1000.0;
@@ -62,32 +62,17 @@ var Engine = (function(global) {
     function init() {
         reset();
         lastTime = Date.now();
-        allEnemies.push(new Enemy);
         main();
     }
 
-    /* This is called by main(). This  calls all functions used to 
+    /* This is called by main(). This calls all functions used to 
      * update entities' data. Use of checkCollisions() is optional based on 
      * how I choose to deal with entity collisions.
      */
     function update(dt) {
-        spawnEnemies();
         updateEntities(dt);
         // checkCollisions();
-    }
-
-
-    function spawnEnemies(){
-        if (allEnemies[0].loc.x > 600) {
-            allEnemies.shift()
-        } else if (allEnemies[0].loc.x < 0) {
-            allEnemies.shift()
-        };
-        if(allEnemies.length < 10){
-            allEnemies.push(new Enemy)
-        };
     };
-
 
     /* This is called by update() and loops through all of the objects within 
      * your allEnemies array as defined in app.js and calls their update() 
@@ -96,71 +81,101 @@ var Engine = (function(global) {
      * All drawing is done in render() methods.
      */
     function updateEntities(dt) {
-        allEnemies.forEach(function(enemy) {
-            enemy.update(dt);
-        });
+        enemyHandler(dt);
         player.update();
-    }
+    };
 
-    /* This function initially draws the "game level", it will then call
-     * the renderEntities function. Remember, this function is called every
-     * game tick (or loop of the game engine) because that's how games work -
-     * they are flipbooks creating the illusion of animation but in reality
-     * they are just drawing the entire screen over and over.
+    function enemyHandler(dt){
+        /* Iterate over the enemy rows. If the row is empty, spawn an enemy.
+         * Randomly spawn more enemies as a factor of the total enemy count.
+         * Evaluate the n=0th enemy in each row to see if it has left the 
+         * screen and if so get rid of it. 
+         */
+        for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
+            var row = enemyRows.rows[i];
+            // If the current row is empty, spawn an enemy.
+            if (row.length == 0) {
+                row.push(new Enemy(i))
+            };
+            if (row.length < config.level) {
+                if (Math.random() < 0.01) {
+                    row.push(new Enemy(i));
+                }
+            };
+
+            /* If the n=0th enemy in each row has exited the visible landscape, 
+             * drop it from that row's array.
+             */
+            if ((row[0].loc.x > (config.grid.xMax + 100)) ||
+                (row[0].loc.x < (config.grid.xMin - 100))) {
+                row.shift()
+            };
+            row.forEach(function(eachEnemy) {
+                eachEnemy.update(dt);
+            });
+        }
+    };
+
+
+
+
+
+
+
+    /* This function draws the landscape, then calls renderEntities() to draw 
+     * all the sprites. This is called once per tick of the game engine.
      */
     function render() {
+        // Render the landscape.
+        renderLandscape();
+        // Render the enemies.
+        for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
+            enemyRows.renderRow(i);
+        };
+        // Render the player.
+        player.render();
+    };
+
+
+    function renderLandscape() {
         /* This array holds the relative URL to the image used
-         * for that particular row of the game level.
-         * TODO: This might be better accomplished by mapping...
-         */
+        * for that particular row of the game level.
+        */
         var rowImages = [
-                'images/water-block.png',   // Top row is water
-                'images/stone-block.png',   // Row 1 of 3 of stone
-                'images/stone-block.png',   // Row 2 of 3 of stone
-                'images/stone-block.png',   // Row 3 of 3 of stone
-                'images/grass-block.png',   // Row 1 of 2 of grass
-                'images/grass-block.png'    // Row 2 of 2 of grass
-            ],
-            row, col;
+            'images/water-block.png',   // Row i=0, water
+            'images/stone-block.png',   // Row i=1, stone
+            'images/stone-block.png',   // Row i=2, stone
+            'images/stone-block.png',   // Row i=3, stone
+            'images/grass-block.png',   // Row i=4, grass
+            'images/grass-block.png',    // Row i=5, grass
+            'images/grass-block.png',   // Row i=4, grass
+            'images/grass-block.png'    // Row i=5, grass
+        ],
+        row, col;
 
         /* Loop through the number of rows and columns we've defined above
-         * and, using the rowImages array, draw the correct image for that
-         * portion of the "grid"
-         */
-        for (row = 0; row < settings.grid.numRows; row++) {
-            for (col = 0; col < settings.grid.numCols; col++) {
+        * and, using the rowImages array, draw the correct image for that
+        * portion of the "grid"
+        */
+        for (row = 0; row < config.grid.numRows; row++) {
+            for (col = 0; col < config.grid.numCols; col++) {
                 /* ctx.drawImage() requires 3 parameters: the image to draw, 
-                 * the x and y coordinates (top left corner). 
-                 * We're using our Resources helpers to refer to our images
-                 * so that we get the benefits of caching these images, since
-                 * we're using them over and over.
-                 */
+                * the x and y coordinates (top left corner). 
+                * We're using our Resources helpers to refer to our images
+                * so that we get the benefits of caching these images, since
+                * we're using them over and over.
+                */
                 ctx.drawImage(
                     Resources.get(rowImages[row]),
-                    col * settings.grid.colWidth,
-                    row * settings.grid.rowHeight
+                    col * config.grid.colWidth,
+                    row * config.grid.rowHeight
                 );
-            }
-        }
+            };
+        };
+    };
 
 
-        renderEntities();
-    }
 
-    /* This function is called by the render function and is called on each game
-     * tick. It's purpose is to then call the render functions you have defined
-     * on your enemy and player entities within app.js
-     */
-    function renderEntities() {
-        /* Loop through all of the objects within the allEnemies array and call
-         * the render function you have defined.
-         */
-        allEnemies.forEach(function(item) {
-            item.render();
-        });
-
-        player.render();
-    }
 
     /* This function does nothing but it could have been a good place to
      * handle game reset states - maybe a new game menu or a game over screen
@@ -168,7 +183,9 @@ var Engine = (function(global) {
      */
     function reset() {
         // noop
-    }
+    };
+
+
 
     /* Go ahead and load all of the images we know we're going to need to
      * draw our game level. Then set init as the callback method, so that when
