@@ -3,7 +3,8 @@
  * randomization out to a method on the Array prototype. This is 
  * directly based on  
  * http://stackoverflow.com/questions/4550505/getting-random-value-from-an-array
- * I may want to find a more appropriate place to declare this still...
+ * I may want to find a more appropriate place to declare this still.
+ * Maybe a library.js file.
  */ 
 
 Array.prototype.pickRand = function() {
@@ -12,23 +13,22 @@ Array.prototype.pickRand = function() {
 
 
 
-/* This is a library of setting  that can be tweaked without 
- * having to dig around all the class constructors. This might be 
- * more appropriately located in engine.js
+/* This object holds settings that can be tweaked without 
+ * having to dig around all the class constructors. 
  */
 var config = {
     grid: {
         colWidth: 101,
         rowOffset: 58,
         rowHeight: 83,
-        numRows: 8,
+        numRows: 7,
         numCols: 8,
         xMin: 0,
         yMin: 0,
     },
     enemy: {
-        imgUrl: 'images/enemy-bug-%data-direction%.png', // This will be modified based on random directionality.
-        rowBounds: {min:0,max:7}   // This doesn't have any effect right now...
+        imgUrl: 'images/enemy-bug-%data-direction%.png',
+        rowBounds: {min:0,max:3}
     },
     player: {
         imgUrl:'images/char-boy.png',
@@ -36,26 +36,54 @@ var config = {
         speed: 4,
         lives: 3,
         loc: {x:0,y:0},
-    },
-    level: 0
+    }
 };
 config.grid.xMax = config.grid.colWidth * config.grid.numCols;
 config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
 
+var Level = function(numRows, numCols, waterProb) {
+    this.urlTile = 'images/%data%-block.png';
+    this.board = [];
+    this.waterProb = waterProb;
+    this.numRows = numRows;
+    this.numCols = numCols;
+};
+
+Level.prototype.reticulateSplines = function() {
+    for (var y = 1; y <= this.numRows; y++) {
+        var row = [];
+            for (var x = 1; x <= this.numCols; x++) {
+                var tile;
+                if ((y == 1) || (y == this.numRows)) {
+                    tile = "stone"
+                } else {
+                    tile = (Math.random() < this.waterProb ? "water" : "grass");
+                };
+                row.push(tile)
+            }
+        this.board.push(row);
+    }
+};
+
+
+
+var oneLevel = new Level(config.grid.numRows,config.grid.numCols,0.2);
+console.log(oneLevel.urlTile);
+console.log(oneLevel);
+oneLevel.reticulateSplines();
+console.log(oneLevel.board);
 
 
 /* The Enemy and Player classes have several attributes in common, 
  * which are factored out into a Character class constructor.
  */
-var Character = function(imgUrl, lives, loc, speed) {
+var Character = function(imgUrl, loc, speed) {
     // Any character must have an image source
     this.imgUrl = imgUrl;
     // Any character must have a current location
     this.loc = loc;
-    // Any character has a speed.
+    // Any character has a speed - pixels per engine tick.
     this.speed = speed;
-    // Any character has a number of lives remaining.
-    this.lives = lives;
 };
 Character.prototype.render = function() {
     ctx.drawImage(Resources.get(this.imgUrl), this.loc.x, this.loc.y);
@@ -65,7 +93,7 @@ Character.prototype.render = function() {
 
 var Player = function() {
     setup = config.player;
-    Character.call(this, setup.imgUrl, setup.lives, setup.loc, setup.speed);
+    Character.call(this, setup.imgUrl, setup.loc, setup.speed);
     this.accel = {x:0, y:0};
 };
 
@@ -87,15 +115,32 @@ Player.prototype.handleInput = function(key, onOff) {
     if (onOff == 0) {this.accel = {x:0, y:0}};
 };
 
+
+
+Player.prototype.textEnemies = function() {
+
+};
+
+Player.prototype.testWall = function() {
+};
+
 Player.prototype.update = function(nav) {
+
     if ((this.loc.x < config.grid.xMin) || (this.loc.x > config.grid.xMax)) {
         this.accel.x = 0;
         this.loc.x += 5;
     };
+    this.move();
+};
 
+Player.prototype.move = function() {
     this.loc.x += (this.speed * this.accel.x);
     this.loc.y += (this.speed * this.accel.y);
 };
+
+
+
+
 
 
 
@@ -118,7 +163,7 @@ var Enemy = function (row) {
     var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,4].pickRand();
     
     // Call the superclass to build out an instance
-    Character.call(this, imgUrl, 1, {x:xInit,y:yInit}, 3); 
+    Character.call(this, imgUrl, {x:xInit,y:yInit}, 3); 
     // Some variables from the constructor survive as permanent properties.
     this.direction = direction;
     this.speed = randomSpeed;

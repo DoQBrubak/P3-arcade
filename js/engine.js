@@ -126,8 +126,10 @@ var Engine = (function(global) {
      * all the sprites. This is called once per tick of the game engine.
      */
     function render() {
+       
         // Render the landscape.
         renderLandscape();
+       
         // Render the enemies.
         for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
             enemyRows.renderRow(i);
@@ -137,7 +139,15 @@ var Engine = (function(global) {
     };
 
 
-    function renderLandscape() {
+
+    function renderTerrain() {
+        var rows = [];
+
+
+
+    }
+
+    function renderLandscape(level) {
         /* This array holds the relative URL to the image used
         * for that particular row of the game level.
         */
@@ -147,9 +157,9 @@ var Engine = (function(global) {
             'images/stone-block.png',   // Row i=2, stone
             'images/stone-block.png',   // Row i=3, stone
             'images/grass-block.png',   // Row i=4, grass
-            'images/grass-block.png',    // Row i=5, grass
-            'images/grass-block.png',   // Row i=4, grass
-            'images/grass-block.png'    // Row i=5, grass
+            'images/grass-block.png',   // Row i=5, grass
+            'images/grass-block.png',   // Row i=6, grass
+            'images/grass-block.png'    // Row i=7, grass
         ],
         row, col;
 
