@@ -85,6 +85,7 @@ var Engine = (function(global) {
         player.update();
     };
 
+
     function enemyHandler(dt){
         /* Iterate over the enemy rows. If the row is empty, spawn an enemy.
          * Randomly spawn more enemies as a factor of the total enemy count.
@@ -98,7 +99,7 @@ var Engine = (function(global) {
                 row.push(new Enemy(i))
             };
             if (row.length < config.level) {
-                if (Math.random() < 0.01) {
+                if (Math.random() < 0.04) {
                     row.push(new Enemy(i));
                 }
             };
@@ -126,11 +127,9 @@ var Engine = (function(global) {
      * all the sprites. This is called once per tick of the game engine.
      */
     function render() {
-       
         // Render the landscape.
-        renderLandscape();
-       
-        // Render the enemies.
+        renderLandscape(oneLevel);
+        // Render the enemies, one row at a time.
         for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
             enemyRows.renderRow(i);
         };
@@ -140,51 +139,17 @@ var Engine = (function(global) {
 
 
 
-    function renderTerrain() {
-        var rows = [];
-
-
-
-    }
-
     function renderLandscape(level) {
-        /* This array holds the relative URL to the image used
-        * for that particular row of the game level.
-        */
-        var rowImages = [
-            'images/water-block.png',   // Row i=0, water
-            'images/stone-block.png',   // Row i=1, stone
-            'images/stone-block.png',   // Row i=2, stone
-            'images/stone-block.png',   // Row i=3, stone
-            'images/grass-block.png',   // Row i=4, grass
-            'images/grass-block.png',   // Row i=5, grass
-            'images/grass-block.png',   // Row i=6, grass
-            'images/grass-block.png'    // Row i=7, grass
-        ],
-        row, col;
-
-        /* Loop through the number of rows and columns we've defined above
-        * and, using the rowImages array, draw the correct image for that
-        * portion of the "grid"
-        */
-        for (row = 0; row < config.grid.numRows; row++) {
-            for (col = 0; col < config.grid.numCols; col++) {
-                /* ctx.drawImage() requires 3 parameters: the image to draw, 
-                * the x and y coordinates (top left corner). 
-                * We're using our Resources helpers to refer to our images
-                * so that we get the benefits of caching these images, since
-                * we're using them over and over.
-                */
+        for (var row = 0; row < level.numRows; row++) {
+            for (var col = 0; col < level.numCols; col++) {
                 ctx.drawImage(
-                    Resources.get(rowImages[row]),
+                    Resources.get(level.urlTile.replace("%data%",level.board[row][col])),
                     col * config.grid.colWidth,
                     row * config.grid.rowHeight
                 );
-            };
-        };
+            }
+        }
     };
-
-
 
 
     /* This function does nothing but it could have been a good place to
@@ -207,7 +172,10 @@ var Engine = (function(global) {
         'images/grass-block.png',
         'images/enemy-bug-right.png',
         'images/enemy-bug-left.png',
-        'images/char-boy.png'
+        'images/char-cat-girl.png',
+        'images/char-horn-girl.png',
+        'images/char-pink-girl.png',
+        'images/char-princess-girl.png'
     ]);
     Resources.onReady(init);
 

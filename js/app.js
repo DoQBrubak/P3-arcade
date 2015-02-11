@@ -22,16 +22,16 @@ var config = {
         rowOffset: 58,
         rowHeight: 83,
         numRows: 7,
-        numCols: 8,
+        numCols: 10,
         xMin: 0,
         yMin: 0,
     },
     enemy: {
         imgUrl: 'images/enemy-bug-%data-direction%.png',
-        rowBounds: {min:0,max:3}
+        rowBounds: {min:0,max:5}
     },
     player: {
-        imgUrl:'images/char-boy.png',
+        imgUrl:'images/char-cat-girl.png',
         points: 0,
         speed: 4,
         lives: 3,
@@ -40,6 +40,8 @@ var config = {
 };
 config.grid.xMax = config.grid.colWidth * config.grid.numCols;
 config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
+
+
 
 var Level = function(numRows, numCols, waterProb) {
     this.urlTile = 'images/%data%-block.png';
@@ -54,7 +56,7 @@ Level.prototype.reticulateSplines = function() {
         var row = [];
             for (var x = 1; x <= this.numCols; x++) {
                 var tile;
-                if ((y == 1) || (y == this.numRows)) {
+                if ((x == 1) || (x == this.numCols)) {
                     tile = "stone"
                 } else {
                     tile = (Math.random() < this.waterProb ? "water" : "grass");
@@ -67,11 +69,9 @@ Level.prototype.reticulateSplines = function() {
 
 
 
-var oneLevel = new Level(config.grid.numRows,config.grid.numCols,0.2);
-console.log(oneLevel.urlTile);
-console.log(oneLevel);
+var oneLevel = new Level(config.grid.numRows,config.grid.numCols,0.3);
 oneLevel.reticulateSplines();
-console.log(oneLevel.board);
+
 
 
 /* The Enemy and Player classes have several attributes in common, 
@@ -117,19 +117,24 @@ Player.prototype.handleInput = function(key, onOff) {
 
 
 
-Player.prototype.textEnemies = function() {
-
+Player.prototype.testEnemies = function() {
 };
 
 Player.prototype.testWall = function() {
 };
 
 Player.prototype.update = function(nav) {
-
-    if ((this.loc.x < config.grid.xMin) || (this.loc.x > config.grid.xMax)) {
+    if (this.loc.x < config.grid.xMin) {
         this.accel.x = 0;
         this.loc.x += 5;
+    } else if (this.loc.x > config.grid.xMax - config.grid.colWidth) {
+        this.accel.x = 0;
+        this.loc.x -= 5;
     };
+    if (this.loc.y < config.grid.yMin-10) {
+        this.accel.y = 0;
+        this.loc.y += 5;
+}
     this.move();
 };
 
