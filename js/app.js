@@ -6,7 +6,6 @@
  * I may want to find a more appropriate place to declare this still.
  * Maybe a library.js file.
  */ 
-
 Array.prototype.pickRand = function() {
     return this[Math.floor(Math.random() * this.length)];
 };
@@ -16,39 +15,74 @@ Array.prototype.pickRand = function() {
 /* This object holds settings that can be tweaked without 
  * having to dig around all the class constructors. 
  */
+
+var status = {};
+
 var config = {
     grid: {
         colWidth: 101,
         rowOffset: 58,
         rowHeight: 83,
-        numRows: 7,
-        numCols: 10,
+        numRows: 8,
+        numCols: 9,
         xMin: 0,
-        yMin: 0,
+        yMin: 0
     },
     enemy: {
-        imgUrl: 'images/enemy-bug-%data-direction%.png',
-        rowBounds: {min:0,max:5}
+        imgUrl: 'images/bug-%data%.png',
+        rowBounds: {min:2,max:5}
     },
     player: {
-        imgUrl:'images/char-cat-girl.png',
+        imgUrl:'images/girl-cat-lg.png',
         points: 0,
-        speed: 4,
+        speed: 5,
         lives: 3,
-        loc: {x:0,y:0},
-    }
+        loc: {x:0,y:0}
+    },
 };
 config.grid.xMax = config.grid.colWidth * config.grid.numCols;
 config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
 
 
 
-var Level = function(numRows, numCols, waterProb) {
-    this.urlTile = 'images/%data%-block.png';
+var Tile = function(row, col, terrain) {
+    this.terrain = (terrain ? terrain : ["water","grass","stone"].pickRand());
+    this.row = row;
+    this.col = col;
+    this.locX = (this.row) * config.grid.colWidth;
+    this.locY = (this.col) * config.grid.rowHeight;
+    this.url = 'images/block-%data%.png'.replace('%data%',this.terrain);
+    this.hasGirl = false;
+    this.hasEnemy = false;
+    this.hasGoody = false;
+}
+
+var Map = function(rows, cols) {
+    this.mapGrid = [];
+    for (var i = 0; i < rows; i ++) {
+        this.mapGrid[i] = [];
+        for (var j = 0; j < cols; j++) {
+            this.mapGrid[i][j] = new Tile(i,j);
+        }
+    }
+}
+
+Map.prototype.render = function(){
+    
+}
+
+var aMap = new Map(config.grid.numRows,config.grid.numCols);
+console.log(aMap);
+
+
+
+var Level = function(numRows, numCols, waterProb, map, diffParams) {
+    this.map = (map ? map : {});
+    this.difficulty = (diffParams ? diffParams: {waterProb:0.1, speedFactor:1});
     this.board = [];
-    this.waterProb = waterProb;
     this.numRows = numRows;
     this.numCols = numCols;
+    this.urlTile = 'images/block-%data%.png';
 };
 
 Level.prototype.reticulateSplines = function() {
@@ -56,10 +90,12 @@ Level.prototype.reticulateSplines = function() {
         var row = [];
             for (var x = 1; x <= this.numCols; x++) {
                 var tile;
-                if ((x == 1) || (x == this.numCols)) {
+                if (y == 1) {
+                    tile = "water"
+                } else if ((x == 1) || (x == this.numCols)) {
                     tile = "stone"
                 } else {
-                    tile = (Math.random() < this.waterProb ? "water" : "grass");
+                    tile = (Math.random() < this.difficulty.waterProb ? "water" : "grass");
                 };
                 row.push(tile)
             }
@@ -69,8 +105,10 @@ Level.prototype.reticulateSplines = function() {
 
 
 
-var oneLevel = new Level(config.grid.numRows,config.grid.numCols,0.3);
+
+var oneLevel = new Level(config.grid.numRows,config.grid.numCols,0.3,{hi:"Hello"});
 oneLevel.reticulateSplines();
+console.log(oneLevel.map);
 
 
 
@@ -110,17 +148,9 @@ Player.prototype.constructor = Player;
 
 // This receives inpute strings from the keystroke listener. 
 Player.prototype.handleInput = function(key, onOff) {
-    this.accel.x += ((key == 'right') * onOff) - ((key == 'left') * onOff);
-    this.accel.y += ((key == 'down') * onOff) - ((key == 'up') * onOff); 
+    this.accel.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
+    this.accel.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
     if (onOff == 0) {this.accel = {x:0, y:0}};
-};
-
-
-
-Player.prototype.testEnemies = function() {
-};
-
-Player.prototype.testWall = function() {
 };
 
 Player.prototype.update = function(nav) {
@@ -163,7 +193,7 @@ var Enemy = function (row) {
     // Starting y coordinate is derived from the row argument passed in.
     var yInit = config.grid.rowOffset + (config.grid.rowHeight * row);
     // Load a left- or right- sprite depending on directionality.
-    var imgUrl = config.enemy.imgUrl.replace('%data-direction%', direction);
+    var imgUrl = config.enemy.imgUrl.replace('%data%', direction);
     // Each enemy speed depends on directionality and a random factor.
     var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,4].pickRand();
     
@@ -215,7 +245,6 @@ var enemyRows = new RowHolder(config.enemy.rowBounds);
 
 
 
-
 // The 'new' keyword is used, per Pseudoclassical inheritance.
 var player = new Player();
 
@@ -232,6 +261,7 @@ var playerMoves = {
         40: 'down',
         32: 'jump'
     };
+
 
 document.addEventListener('keydown', function(e) {
     player.handleInput(playerMoves[e.keyCode], true)

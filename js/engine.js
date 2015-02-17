@@ -25,9 +25,8 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime;
 
-    //canvas.width = config.grid.numCols * config.grid.colWidth;
     canvas.width = config.grid.xMax;
-    canvas.height = config.grid.rowOffset + config.grid.numRows * config.grid.rowHeight;
+    canvas.height = config.grid.yMax - 50;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -127,6 +126,8 @@ var Engine = (function(global) {
      * all the sprites. This is called once per tick of the game engine.
      */
     function render() {
+        // Render details about the game state;
+        renderDashboard();
         // Render the landscape.
         renderLandscape(oneLevel);
         // Render the enemies, one row at a time.
@@ -137,7 +138,8 @@ var Engine = (function(global) {
         player.render();
     };
 
-
+    function renderDashboard() {
+    }
 
     function renderLandscape(level) {
         for (var row = 0; row < level.numRows; row++) {
@@ -145,7 +147,8 @@ var Engine = (function(global) {
                 ctx.drawImage(
                     Resources.get(level.urlTile.replace("%data%",level.board[row][col])),
                     col * config.grid.colWidth,
-                    row * config.grid.rowHeight
+                    row * config.grid.rowHeight - 30
+
                 );
             }
         }
@@ -167,15 +170,19 @@ var Engine = (function(global) {
      * all of these images are properly loaded our game will start.
      */
     Resources.load([
-        'images/stone-block.png',
-        'images/water-block.png',
-        'images/grass-block.png',
-        'images/enemy-bug-right.png',
-        'images/enemy-bug-left.png',
-        'images/char-cat-girl.png',
-        'images/char-horn-girl.png',
-        'images/char-pink-girl.png',
-        'images/char-princess-girl.png'
+        'images/block-stone.png',
+        'images/block-water.png',
+        'images/block-grass.png',
+        'images/bug-right.png',
+        'images/bug-left.png',
+        'images/girl-cat-lg.png',
+        'images/girl-cat-sm.png',
+        'images/girl-royal-lg.png',
+        'images/girl-royal-sm.png',
+        'images/girl-pink-lg.png',
+        'images/girl-pink-sm.png',
+        'images/girl-horn-lg.png',
+        'images/girl-horn-sm.png'
     ]);
     Resources.onReady(init);
 
