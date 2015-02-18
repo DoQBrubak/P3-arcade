@@ -128,33 +128,21 @@ var Engine = (function(global) {
      */
     function render() {
         // Render details about the game state;
-        renderDashboard();
+        renderDash();
+        
         // Render the landscape.
         aMap.render();
-        //renderLandscape(oneLevel);
+        
         // Render the enemies, one row at a time.
-        //for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
-        //    enemyRows.renderRow(i);
-        //};
+        for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
+            enemyRows.renderRow(i);
+        };
         // Render the player.
         player.render();
     };
 
-    function renderDashboard() {
+    function renderDash() {
     }
-
-    function renderLandscape(level) {
-        for (var row = 0; row < level.numRows; row++) {
-            for (var col = 0; col < level.numCols; col++) {
-                ctx.drawImage(
-                    Resources.get(level.urlTile.replace("%data%",level.board[row][col])),
-                    col * config.grid.colWidth,
-                    row * config.grid.rowHeight - 30
-
-                );
-            }
-        }
-    };
 
 
     /* This function does nothing but it could have been a good place to

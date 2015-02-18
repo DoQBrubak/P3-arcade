@@ -222,17 +222,20 @@ var Enemy = function (row) {
     var xInit = direction == 'right' ? config.grid.xMin - 100 : config.grid.xMax + 100;
     // Starting y coordinate is derived from the row argument passed in.
     var yInit = config.grid.rowOffset + (config.grid.rowHeight * row);
+    
     // Load a left- or right- sprite depending on directionality.
     var imgUrl = config.enemy.imgUrl.replace('%data%', direction);
     // Each enemy speed depends on directionality and a random factor.
-    var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,4].pickRand();
+    var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,3,4].pickRand();
     
     // Call the superclass to build out an instance
     Living.call(
         this,
         {x:xInit,y:yInit},
+        imgUrl,
         null,
-        null,randomSpeed
+        null,
+        randomSpeed
         ); 
     // Some variables from the constructor survive as permanent properties.
     this.direction = direction;
