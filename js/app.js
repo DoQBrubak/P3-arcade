@@ -19,7 +19,7 @@ var config = {
         colWidth: 101,
         rowOffset: 58,
         rowHeight: 83,
-        numRows: 8,
+        numRows: 7,
         numCols: 9,
         xMin: 0,
         yMin: 0
@@ -27,14 +27,7 @@ var config = {
     enemy: {
         imgUrl: 'images/bug-%data%.png',
         rowBounds: {min:1,max:6}
-    },
-    player: {
-        imgUrl:'images/girl-cat-lg.png',
-        points: 0,
-        speed: 5,
-        lives: 3,
-        loc: {x:0,y:0}
-    },
+    }
 };
 config.grid.xMax = config.grid.colWidth * config.grid.numCols;
 config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
@@ -71,8 +64,12 @@ Map.prototype.render = function(){
 }
 
 Map.prototype.generate = function(pGrass,pStone){
+    
+
     this.matrix[0][0] = new Tile(0,0,'stone'),
-    this.matrix[6][7] = new Tile(6,7,'stone')
+    
+
+    this.matrix[6][8] = new Tile(6,8,'stone')
 };
 
 
@@ -87,7 +84,7 @@ var Entity = function(imgUrl, loc, speed) {
     this.imgUrl = imgUrl;
     // Any Entity must have a current location
     this.loc = loc;
-    // Any Entity has a speed - pixels per engine tick.
+    // Many Entity subclasses have speed - pixels per engine tick.
     this.speed = speed;
 };
 Entity.prototype.render = function() {
@@ -116,15 +113,17 @@ Tile.prototype = Object.create(Entity.prototype);
 
 
 
-var Player = function() {
-    setup = config.player;
-    Entity.call(this, setup.imgUrl, setup.loc, setup.speed);
-    this.accel = {x:0, y:0};
+var Player = function(whichGirl) {
+    Entity.call(
+        this,
+        'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
+        {x:0,y:0},
+        10
+    );
+    this.veloc = {x:0, y:0};
 };
 
-/* Being a pseudoclassical subclass of Entity, Player must inherit 
- * its prototype explicitly.
- */
+// A pseudoclassical subclass of Entity, Player must inherit its prototype explicitly.
 Player.prototype = Object.create(Entity.prototype);
 
 /* Having inherited Entity.prototype, Player must re-establish its 
@@ -133,34 +132,37 @@ Player.prototype = Object.create(Entity.prototype);
 Player.prototype.constructor = Player;
 
 
+
+
+
 // This receives inpute strings from the keystroke listener. 
 Player.prototype.handleInput = function(key, onOff) {
-    this.accel.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
-    this.accel.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
-    if (onOff == 0) {this.accel = {x:0, y:0}};
+    this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
+    this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
+    if (onOff == 0) {this.veloc = {x:0, y:0}};
 };
 
 Player.prototype.update = function(nav) {
     if (this.loc.x < config.grid.xMin - 15) {
-        this.accel.x = 0;
+        this.veloc.x = 0;
         this.loc.x += 5;
     } else if (this.loc.x > config.grid.xMax - config.grid.colWidth + 15) {
-        this.accel.x = 0;
+        this.veloc.x = 0;
         this.loc.x -= 5;
     };
     if (this.loc.y < config.grid.yMin-6) {
-        this.accel.y = 0;
+        this.veloc.y = 0;
         this.loc.y += 5;
-    } else if (this.loc.y > config.grid.yMax-200) {
-        this.accel.y = 0;
+    } else if (this.loc.y > config.grid.yMax-90) {
+        this.veloc.y = 0;
         this.loc.y -= 5;
     }
     this.move();
 };
 
 Player.prototype.move = function() {
-    this.loc.x += (this.speed * this.accel.x);
-    this.loc.y += (this.speed * this.accel.y);
+    this.loc.x += (this.speed * this.veloc.x);
+    this.loc.y += (this.speed * this.veloc.y);
 };
 
 
@@ -236,7 +238,7 @@ var enemyRows = new RowHolder(config.enemy.rowBounds);
 
 
 // The 'new' keyword is used, per Pseudoclassical inheritance.
-var player = new Player();
+var player = new Player('pink');
 
 
 

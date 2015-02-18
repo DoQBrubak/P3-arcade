@@ -26,7 +26,7 @@ var Engine = (function(global) {
         lastTime;
 
     canvas.width = config.grid.xMax;
-    canvas.height = config.grid.yMax - 50;
+    canvas.height = config.grid.yMax+50;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -62,7 +62,7 @@ var Engine = (function(global) {
         reset();
         lastTime = Date.now();
         main();
-        
+
     }
 
     /* This is called by main(). This calls all functions used to 
