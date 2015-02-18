@@ -75,12 +75,9 @@ Map.prototype.generate = function(pWater,pStone){
         }
     }
 
-
-
     /* This builds the matrix full of Tile objects based on 
      * the draft matrix full of strings.
      */
-
     for (var i = 0; i < this.rows; i ++) {
         this.matrix[i] = [];
         for (var j = 0; j < this.cols; j++) {
@@ -111,16 +108,23 @@ var Entity = function(loc, imgUrl, imgOffset, geom) {
 };
 // Any Entity can be called on to render itself.
 Entity.prototype.render = function() {
+    if (this instanceof Player) {
+    //console.log(this);
+    }
     ctx.drawImage(Resources.get(this.imgUrl), this.loc.x, this.loc.y);
 };
 
 
 
 
+/* Tile is a subclass of Entity. If goodies turn out to have 
+ * characteristics in common with Tile, I may create "Living" and
+ * "InLiving" subclasses.
+ */
 var Tile = function(row, col, terrain) {
     Entity.call(
         this,
-        {x:(col*config.grid.colWidth),y:(row*config.grid.rowHeight)},
+        {x:(col*config.grid.colWidth),y:(row*config.grid.rowHeight-50)},
         'images/block-%data%.png'.replace('%data%', terrain),
         null,   // no current imgOffset determined
         null);  // no current geom determined
@@ -131,17 +135,24 @@ var Tile = function(row, col, terrain) {
     this.hasGoody = false;
 }
 Tile.prototype = Object.create(Entity.prototype);
+Tile.prototype.constructor = Tile;
 
 
 
-
-var Lifeform = function(imgUrl, loc, offset) {
+/* This is a class for all Living things. This is a subclass 
+ * of Entity that is super to all classes of things that move around.
+ */
+var Living = function(loc, imgUrl, imgOffset, geom, speed) {
     Entity.call(
         this,
-        imgURl,
         loc,
-        offset)
+        imgUrl,
+        imgOffset,
+        geom);
+    this.speed = speed;
 };
+Living.prototype = Object.create(Entity.prototype);
+Living.prototype.constructor = Living;
 
 
 
@@ -149,46 +160,40 @@ var Lifeform = function(imgUrl, loc, offset) {
 
 
 var Player = function(whichGirl) {
-    Entity.call(
+    Living.call(
         this,
+        {x:0,y:-60},
         'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
-        {x:0,y:0},
-        10
+        null,
+        null,
+        5
     );
     this.veloc = {x:0, y:0};
 };
-
-// A pseudoclassical subclass of Entity, Player must inherit its prototype explicitly.
-Player.prototype = Object.create(Entity.prototype);
-
-/* Having inherited Entity.prototype, Player must re-establish its 
- * constructor explicitly
- */
+Player.prototype = Object.create(Living.prototype);
 Player.prototype.constructor = Player;
-
-
-
-
 
 // This receives inpute strings from the keystroke listener. 
 Player.prototype.handleInput = function(key, onOff) {
     this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
     this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
-    if (onOff == 0) {this.veloc = {x:0, y:0}};
+    if (onOff == 0) {this.veloc = {x:0, y:0}
+    console.log("x: ",this.loc.x, " y: ", this.loc.y);
+    };
 };
 
 Player.prototype.update = function(nav) {
-    if (this.loc.x < config.grid.xMin - 15) {
+    if (this.loc.x < config.grid.xMin - 10) {
         this.veloc.x = 0;
         this.loc.x += 5;
     } else if (this.loc.x > config.grid.xMax - config.grid.colWidth + 15) {
         this.veloc.x = 0;
         this.loc.x -= 5;
     };
-    if (this.loc.y < config.grid.yMin-6) {
+    if (this.loc.y < config.grid.yMin-76) {
         this.veloc.y = 0;
         this.loc.y += 5;
-    } else if (this.loc.y > config.grid.yMax-90) {
+    } else if (this.loc.y > config.grid.yMax-140) {
         this.veloc.y = 0;
         this.loc.y -= 5;
     }
@@ -208,9 +213,7 @@ Player.prototype.move = function() {
 
 
 
-/* Enemy is a subclass of Entity, just like Player. Its .prototype and 
- * .constructor are set per Player annotation, above.
- */
+// Enemy is another subclass of Entity/Living inheritance.
 
 var Enemy = function (row) {
     // Each new enemy has random directionality.
@@ -225,18 +228,19 @@ var Enemy = function (row) {
     var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,4].pickRand();
     
     // Call the superclass to build out an instance
-    Entity.call(this, imgUrl, {x:xInit,y:yInit}, 3); 
+    Living.call(
+        this,
+        {x:xInit,y:yInit},
+        null,
+        null,randomSpeed
+        ); 
     // Some variables from the constructor survive as permanent properties.
     this.direction = direction;
     this.speed = randomSpeed;
 };
 
-/* Enemy is a subclass of Entity, per the same logic described above  
- * for Player.
- */
-Enemy.prototype = Object.create(Entity.prototype);
+Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
-// Unique Enemy methods...
 Enemy.prototype.update = function() {
     this.loc.x += this.speed;
 };
@@ -273,7 +277,7 @@ var enemyRows = new RowHolder(config.enemy.rowBounds);
 
 
 // The 'new' keyword is used, per Pseudoclassical inheritance.
-var player = new Player('pink');
+var player = new Player('horn');
 
 
 

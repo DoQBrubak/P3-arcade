@@ -26,7 +26,7 @@ var Engine = (function(global) {
         lastTime;
 
     canvas.width = config.grid.xMax;
-    canvas.height = config.grid.yMax+50;
+    canvas.height = config.grid.yMax;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -133,9 +133,9 @@ var Engine = (function(global) {
         aMap.render();
         //renderLandscape(oneLevel);
         // Render the enemies, one row at a time.
-        for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
-            enemyRows.renderRow(i);
-        };
+        //for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
+        //    enemyRows.renderRow(i);
+        //};
         // Render the player.
         player.render();
     };
