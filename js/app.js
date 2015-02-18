@@ -11,13 +11,9 @@ Array.prototype.pickRand = function() {
 };
 
 
-
-/* This object holds settings that can be tweaked without 
+/* The CONFIG object holds settings that can be tweaked without 
  * having to dig around all the class constructors. 
  */
-
-var status = {};
-
 var config = {
     grid: {
         colWidth: 101,
@@ -30,7 +26,7 @@ var config = {
     },
     enemy: {
         imgUrl: 'images/bug-%data%.png',
-        rowBounds: {min:2,max:5}
+        rowBounds: {min:1,max:6}
     },
     player: {
         imgUrl:'images/girl-cat-lg.png',
@@ -45,102 +41,93 @@ config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
 
 
 
-var Tile = function(row, col, terrain) {
-    this.terrain = (terrain ? terrain : ["water","grass","stone"].pickRand());
-    this.row = row;
-    this.col = col;
-    this.locX = (this.row) * config.grid.colWidth;
-    this.locY = (this.col) * config.grid.rowHeight;
-    this.url = 'images/block-%data%.png'.replace('%data%',this.terrain);
-    this.hasGirl = false;
-    this.hasEnemy = false;
-    this.hasGoody = false;
-}
-
+/*
+ * The Map class goes here.
+ * A Map is comprised of a matrix (Array of Arrays), in which each 
+ * first- and second- order index corresponds to the row and col 
+ * identities for Tile objects stored therein.
+ * It does not currently have any sub- or super-classes.
+ */
 var Map = function(rows, cols) {
-    this.mapGrid = [];
+    this.rows = rows;
+    this.cols = cols;
+    this.matrix = [];
     for (var i = 0; i < rows; i ++) {
-        this.mapGrid[i] = [];
+        this.matrix[i] = [];
         for (var j = 0; j < cols; j++) {
-            this.mapGrid[i][j] = new Tile(i,j);
+            this.matrix[i][j] = new Tile(i,j,'water');
         }
     }
 }
 
+
+
 Map.prototype.render = function(){
-    
+    for (var i = 0; i < this.rows; i++) {
+        for (var j =0; j < this.cols; j++) {
+            this.matrix[i][j].render();
+        }
+    }
 }
 
-var aMap = new Map(config.grid.numRows,config.grid.numCols);
-console.log(aMap);
-
-
-
-var Level = function(numRows, numCols, waterProb, map, diffParams) {
-    this.map = (map ? map : {});
-    this.difficulty = (diffParams ? diffParams: {waterProb:0.1, speedFactor:1});
-    this.board = [];
-    this.numRows = numRows;
-    this.numCols = numCols;
-    this.urlTile = 'images/block-%data%.png';
-};
-
-Level.prototype.reticulateSplines = function() {
-    for (var y = 1; y <= this.numRows; y++) {
-        var row = [];
-            for (var x = 1; x <= this.numCols; x++) {
-                var tile;
-                if (y == 1) {
-                    tile = "water"
-                } else if ((x == 1) || (x == this.numCols)) {
-                    tile = "stone"
-                } else {
-                    tile = (Math.random() < this.difficulty.waterProb ? "water" : "grass");
-                };
-                row.push(tile)
-            }
-        this.board.push(row);
-    }
+Map.prototype.generate = function(pGrass,pStone){
+    this.matrix[0][0] = new Tile(0,0,'stone'),
+    this.matrix[6][7] = new Tile(6,7,'stone')
 };
 
 
 
 
-var oneLevel = new Level(config.grid.numRows,config.grid.numCols,0.3,{hi:"Hello"});
-oneLevel.reticulateSplines();
-console.log(oneLevel.map);
 
-
-
-/* The Enemy and Player classes have several attributes in common, 
- * which are factored out into a Character class constructor.
+/* The Enemy, Player and Tile classes have several attributes in common, 
+ * which are factored out into a Entity class constructor.
  */
-var Character = function(imgUrl, loc, speed) {
-    // Any character must have an image source
+var Entity = function(imgUrl, loc, speed) {
+    // Any Entity must have an image source
     this.imgUrl = imgUrl;
-    // Any character must have a current location
+    // Any Entity must have a current location
     this.loc = loc;
-    // Any character has a speed - pixels per engine tick.
+    // Any Entity has a speed - pixels per engine tick.
     this.speed = speed;
 };
-Character.prototype.render = function() {
+Entity.prototype.render = function() {
     ctx.drawImage(Resources.get(this.imgUrl), this.loc.x, this.loc.y);
 };
 
 
 
+
+
+var Tile = function(row, col, terrain) {
+    Entity.call(
+        this,
+        'images/block-%data%.png'.replace('%data%', terrain),
+        {x:(col*config.grid.colWidth),y:(row*config.grid.rowHeight)},
+        0);
+    this.row = row;
+    this.col = col;
+    this.hasGirl = false;
+    this.hasEnemy = false;
+    this.hasGoody = false;
+}
+Tile.prototype = Object.create(Entity.prototype);
+
+
+
+
+
 var Player = function() {
     setup = config.player;
-    Character.call(this, setup.imgUrl, setup.loc, setup.speed);
+    Entity.call(this, setup.imgUrl, setup.loc, setup.speed);
     this.accel = {x:0, y:0};
 };
 
-/* Being a pseudoclassical subclass of Character, Player must inherit 
+/* Being a pseudoclassical subclass of Entity, Player must inherit 
  * its prototype explicitly.
  */
-Player.prototype = Object.create(Character.prototype);
+Player.prototype = Object.create(Entity.prototype);
 
-/* Having inherited Character.prototype, Player must re-establish its 
+/* Having inherited Entity.prototype, Player must re-establish its 
  * constructor explicitly
  */
 Player.prototype.constructor = Player;
@@ -154,17 +141,20 @@ Player.prototype.handleInput = function(key, onOff) {
 };
 
 Player.prototype.update = function(nav) {
-    if (this.loc.x < config.grid.xMin) {
+    if (this.loc.x < config.grid.xMin - 15) {
         this.accel.x = 0;
         this.loc.x += 5;
-    } else if (this.loc.x > config.grid.xMax - config.grid.colWidth) {
+    } else if (this.loc.x > config.grid.xMax - config.grid.colWidth + 15) {
         this.accel.x = 0;
         this.loc.x -= 5;
     };
-    if (this.loc.y < config.grid.yMin-10) {
+    if (this.loc.y < config.grid.yMin-6) {
         this.accel.y = 0;
         this.loc.y += 5;
-}
+    } else if (this.loc.y > config.grid.yMax-200) {
+        this.accel.y = 0;
+        this.loc.y -= 5;
+    }
     this.move();
 };
 
@@ -181,7 +171,7 @@ Player.prototype.move = function() {
 
 
 
-/* Enemy is a subclass of Character, just like Player. Its .prototype and 
+/* Enemy is a subclass of Entity, just like Player. Its .prototype and 
  * .constructor are set per Player annotation, above.
  */
 
@@ -198,16 +188,16 @@ var Enemy = function (row) {
     var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,4].pickRand();
     
     // Call the superclass to build out an instance
-    Character.call(this, imgUrl, {x:xInit,y:yInit}, 3); 
+    Entity.call(this, imgUrl, {x:xInit,y:yInit}, 3); 
     // Some variables from the constructor survive as permanent properties.
     this.direction = direction;
     this.speed = randomSpeed;
 };
 
-/* Enemy is a subclass of Character, per the same logic described above  
+/* Enemy is a subclass of Entity, per the same logic described above  
  * for Player.
  */
-Enemy.prototype = Object.create(Character.prototype);
+Enemy.prototype = Object.create(Entity.prototype);
 Enemy.prototype.constructor = Enemy;
 // Unique Enemy methods...
 Enemy.prototype.update = function() {
@@ -261,6 +251,11 @@ var playerMoves = {
         40: 'down',
         32: 'jump'
     };
+
+
+var aMap = new Map(config.grid.numRows,config.grid.numCols);
+aMap.generate();
+
 
 
 document.addEventListener('keydown', function(e) {

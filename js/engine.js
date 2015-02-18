@@ -62,6 +62,7 @@ var Engine = (function(global) {
         reset();
         lastTime = Date.now();
         main();
+        
     }
 
     /* This is called by main(). This calls all functions used to 
@@ -129,7 +130,8 @@ var Engine = (function(global) {
         // Render details about the game state;
         renderDashboard();
         // Render the landscape.
-        renderLandscape(oneLevel);
+        aMap.render();
+        //renderLandscape(oneLevel);
         // Render the enemies, one row at a time.
         for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
             enemyRows.renderRow(i);
