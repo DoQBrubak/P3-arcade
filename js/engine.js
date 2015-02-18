@@ -59,10 +59,8 @@ var Engine = (function(global) {
      * game loop.
      */
     function init() {
-        reset();
         lastTime = Date.now();
         main();
-
     }
 
     /* This is called by main(). This calls all functions used to 
@@ -70,88 +68,29 @@ var Engine = (function(global) {
      * how I choose to deal with entity collisions.
      */
     function update(dt) {
-        updateEntities(dt);
-        // checkCollisions();
+        allEnemies.update(dt);
+        player.update(dt);
     };
-
-    /* This is called by update() and loops through all of the objects within 
-     * your allEnemies array as defined in app.js and calls their update() 
-     * methods. It then calls player.update() for my player object. These 
-     * update methods focus purely on updating object data and properties.
-     * All drawing is done in render() methods.
-     */
-    function updateEntities(dt) {
-        enemyHandler(dt);
-        player.update();
-    };
-
-
-    function enemyHandler(dt){
-        /* Iterate over the enemy rows. If the row is empty, spawn an enemy.
-         * Randomly spawn more enemies as a factor of the total enemy count.
-         * Evaluate the n=0th enemy in each row to see if it has left the 
-         * screen and if so get rid of it. 
-         */
-        for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
-            var row = enemyRows.rows[i];
-            // If the current row is empty, spawn an enemy.
-            if (row.length == 0) {
-                row.push(new Enemy(i))
-            };
-            if (row.length < config.level) {
-                if (Math.random() < 0.04) {
-                    row.push(new Enemy(i));
-                }
-            };
-
-            /* If the n=0th enemy in each row has exited the visible landscape, 
-             * drop it from that row's array.
-             */
-            if ((row[0].loc.x > (config.grid.xMax + 100)) ||
-                (row[0].loc.x < (config.grid.xMin - 100))) {
-                row.shift()
-            };
-            row.forEach(function(eachEnemy) {
-                eachEnemy.update(dt);
-            });
-        }
-    };
-
-
-
-
-
 
 
     /* This function draws the landscape, then calls renderEntities() to draw 
      * all the sprites. This is called once per tick of the game engine.
      */
     function render() {
+        
         // Render details about the game state;
-        renderDash();
+        //dashboard.render();
         
         // Render the landscape.
         aMap.render();
         
-        // Render the enemies, one row at a time.
-        for (var i = config.enemy.rowBounds.min; i < config.enemy.rowBounds.max; i++) {
-            enemyRows.renderRow(i);
-        };
+        // Render the buggies.
+        allEnemies.render();
+
         // Render the player.
         player.render();
     };
 
-    function renderDash() {
-    }
-
-
-    /* This function does nothing but it could have been a good place to
-     * handle game reset states - maybe a new game menu or a game over screen
-     * those sorts of things. It's only called once by the init() method.
-     */
-    function reset() {
-        // noop
-    };
 
 
 

@@ -14,6 +14,21 @@ Array.prototype.pickRand = function() {
 /* The CONFIG object holds settings that can be tweaked without 
  * having to dig around all the class constructors. 
  */
+var GRID = {
+    xMin: 0,
+    colNum: 9,
+    colWid: 101,
+    xMax: 909,
+    
+    yMin: 0,
+    rowNum: 7,
+    rowHei: 83,
+    rowHeiOffset: 58,
+    yMax: 581
+};
+
+
+
 var config = {
     grid: {
         colWidth: 101,
@@ -23,15 +38,12 @@ var config = {
         numCols: 9,
         xMin: 0,
         yMin: 0
-    },
-    enemy: {
-        imgUrl: 'images/bug-%data%.png',
-        rowBounds: {min:1,max:6}
     }
 };
 config.grid.xMax = config.grid.colWidth * config.grid.numCols;
 config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
 
+var rowsWithEnemies = {min:1,max:6};
 
 
 /*
@@ -153,12 +165,13 @@ var Living = function(loc, imgUrl, imgOffset, geom, speed) {
 };
 Living.prototype = Object.create(Entity.prototype);
 Living.prototype.constructor = Living;
+Living.prototype.onWhatGround = function(){};
 
 
 
 
-
-
+/* Player is a subclass of Entity/Living inheritance.
+ */
 var Player = function(whichGirl) {
     Living.call(
         this,
@@ -183,6 +196,7 @@ Player.prototype.handleInput = function(key, onOff) {
 };
 
 Player.prototype.update = function(nav) {
+    // These logicals address boundary collisions.
     if (this.loc.x < config.grid.xMin - 10) {
         this.veloc.x = 0;
         this.loc.x += 5;
@@ -196,11 +210,8 @@ Player.prototype.update = function(nav) {
     } else if (this.loc.y > config.grid.yMax-140) {
         this.veloc.y = 0;
         this.loc.y -= 5;
-    }
-    this.move();
-};
-
-Player.prototype.move = function() {
+    };
+    // Now actually update the player location.
     this.loc.x += (this.speed * this.veloc.x);
     this.loc.y += (this.speed * this.veloc.y);
 };
@@ -213,76 +224,79 @@ Player.prototype.move = function() {
 
 
 
-// Enemy is another subclass of Entity/Living inheritance.
-
-var Enemy = function (row) {
-    // Each new enemy has random directionality.
-    var direction = ['left','right'].pickRand(); 
-    // Starting x coordinate depends on the directionality.
-    var xInit = direction == 'right' ? config.grid.xMin - 100 : config.grid.xMax + 100;
-    // Starting y coordinate is derived from the row argument passed in.
-    var yInit = config.grid.rowOffset + (config.grid.rowHeight * row);
-    
-    // Load a left- or right- sprite depending on directionality.
-    var imgUrl = config.enemy.imgUrl.replace('%data%', direction);
-    // Each enemy speed depends on directionality and a random factor.
-    var randomSpeed = (direction == 'right' ? 1 : -1) * [2,2,3,3,4].pickRand();
-    
+/* Enemy is a subclass of Entity/Living inheritance.
+ */
+var Enemy = function (row, direction, speed, loc, imgUrl) {
     // Call the superclass to build out an instance
     Living.call(
         this,
-        {x:xInit,y:yInit},
-        imgUrl,
+        loc,
+        'images/bug-%data%.png'.replace('%data%',direction),
         null,
         null,
-        randomSpeed
+        speed
         ); 
-    // Some variables from the constructor survive as permanent properties.
+    this.row = row;
     this.direction = direction;
-    this.speed = randomSpeed;
+    this.speed = speed;
+    this.dead = false;
+    this.ground = null;
 };
 
 Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
+
+Enemy.prototype.checkBoundary = function(){};
+
+
 Enemy.prototype.update = function() {
+    this.checkBoundary();
     this.loc.x += this.speed;
 };
 
 
 
 
+var Collection = function (){
+    this.members = [];
+}
 
-/* This is a class designed initially as a superclass to the enemyRows 
- * object. It is anticipated that other object types may do well to be 
- * managed by row also...
+Collection.prototype.render = function() {
+    for (var i=0; i < this.members.length; i++) {
+        this.members[i].render();
+    }
+}
+Collection.prototype.update = function() {
+    for(var i=0; i < this.members.length; i++) {
+        this.members[i].update();
+    }
+}
+
+
+
+var makeEnemy = function(){
+    var row, direction, speed, loc;
+    row = [1,2,3,4,5].pickRand();
+    direction = ['right','left'].pickRand();
+    speed = (direction == 'right' ? 1 : -1) * [2,3,4,5].pickRand();
+    loc = {
+        x: (direction == 'right' ? 0 : GRID.xMax),
+        y: row*GRID.rowHei
+    }
+    return new Enemy(row, direction, speed, loc);
+}
+
+
+/* The 'new' keyword is used to create a Player, per Pseudoclassical 
+ * inheritance paterns.
  */
-var RowHolder = function (bounds) {
-    var obj = {};
-    for (var i = bounds.min; i < bounds.max; i++) {
-        obj[i] = [];
-    };
-    this.rows = obj;
-    this.bounds = bounds;
-};
-
-RowHolder.prototype.renderRow = function(i) {
-    this.rows[i].forEach(function(each){
-        each.render();
-    });
-};
-
-/* enemyRows is an object, derived from the RowHolder class, which 
- * binds each row accessible to enemies to an array which contains the 
- * enemies that actually occupy that row.
- */
-var enemyRows = new RowHolder(config.enemy.rowBounds);
-
-
-
-// The 'new' keyword is used, per Pseudoclassical inheritance.
 var player = new Player('horn');
 
 
+var allEnemies = new Collection();
+for (var i=0; i<7; i++) {
+    allEnemies.members.push(makeEnemy())
+};
 
 
 /* This listens for key presses, translates the 'allowed' keys to 
@@ -297,7 +311,7 @@ var playerMoves = {
 
 
 var aMap = new Map(config.grid.numRows,config.grid.numCols);
-aMap.generate(0.1,0.3);
+aMap.generate(0.3,0.3);
 
 
 
