@@ -45,14 +45,7 @@ var Map = function(rows, cols) {
     this.rows = rows;
     this.cols = cols;
     this.matrix = [];
-    for (var i = 0; i < rows; i ++) {
-        this.matrix[i] = [];
-        for (var j = 0; j < cols; j++) {
-            this.matrix[i][j] = new Tile(i,j,'water');
-        }
-    }
 }
-
 
 
 Map.prototype.render = function(){
@@ -63,12 +56,39 @@ Map.prototype.render = function(){
     }
 }
 
-Map.prototype.generate = function(pGrass,pStone){
-    
+Map.prototype.generate = function(pWater,pStone){
+    var draftMatrix = [];
 
-    this.matrix[0][0] = new Tile(0,0,'stone'),
-    
+    for (var i = 0; i < this.rows; i ++) {
+        draftMatrix[i] = [];
+        for (var j = 0; j < this.cols; j++) {
+            var what;
+            if (i==0) {
+                if (j==0) {what = 'grass'}
+                else {what = 'water'}
+            } else if (i == config.grid.numRows && j ==config.grid.numCols) {
+                what = 'stone'
+            } else {
+                what = (Math.random() < pWater ? 'water' : Math.random() < pStone ? 'stone' : 'grass');
+            }
+            draftMatrix[i][j] = what;
+        }
+    }
 
+
+
+    /* This builds the matrix full of Tile objects based on 
+     * the draft matrix full of strings.
+     */
+
+    for (var i = 0; i < this.rows; i ++) {
+        this.matrix[i] = [];
+        for (var j = 0; j < this.cols; j++) {
+            this.matrix[i][j] = new Tile(i,j,draftMatrix[i][j]);
+        }
+    }
+
+    this.matrix[0][0] = new Tile(0,0,'grass'),
     this.matrix[6][8] = new Tile(6,8,'stone')
 };
 
@@ -79,14 +99,17 @@ Map.prototype.generate = function(pGrass,pStone){
 /* The Enemy, Player and Tile classes have several attributes in common, 
  * which are factored out into a Entity class constructor.
  */
-var Entity = function(imgUrl, loc, speed) {
-    // Any Entity must have an image source
-    this.imgUrl = imgUrl;
-    // Any Entity must have a current location
+var Entity = function(loc, imgUrl, imgOffset, geom) {
+    // This is the gameplay coordinates.
     this.loc = loc;
-    // Many Entity subclasses have speed - pixels per engine tick.
-    this.speed = speed;
+    // This is the image source url.
+    this.imgUrl = imgUrl;
+    // This describes the offset from the Entity center point to image origin point. 
+    this.imgOffset = imgOffset; 
+    // This describes geometry relevant to collisions and other gameplay.
+    this.geom = geom;
 };
+// Any Entity can be called on to render itself.
 Entity.prototype.render = function() {
     ctx.drawImage(Resources.get(this.imgUrl), this.loc.x, this.loc.y);
 };
@@ -94,13 +117,13 @@ Entity.prototype.render = function() {
 
 
 
-
 var Tile = function(row, col, terrain) {
     Entity.call(
         this,
-        'images/block-%data%.png'.replace('%data%', terrain),
         {x:(col*config.grid.colWidth),y:(row*config.grid.rowHeight)},
-        0);
+        'images/block-%data%.png'.replace('%data%', terrain),
+        null,   // no current imgOffset determined
+        null);  // no current geom determined
     this.row = row;
     this.col = col;
     this.hasGirl = false;
@@ -108,6 +131,18 @@ var Tile = function(row, col, terrain) {
     this.hasGoody = false;
 }
 Tile.prototype = Object.create(Entity.prototype);
+
+
+
+
+var Lifeform = function(imgUrl, loc, offset) {
+    Entity.call(
+        this,
+        imgURl,
+        loc,
+        offset)
+};
+
 
 
 
@@ -250,13 +285,12 @@ var playerMoves = {
         37: 'left',
         38: 'up',
         39: 'right',
-        40: 'down',
-        32: 'jump'
+        40: 'down'
     };
 
 
 var aMap = new Map(config.grid.numRows,config.grid.numCols);
-aMap.generate();
+aMap.generate(0.1,0.3);
 
 
 
