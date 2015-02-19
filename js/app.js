@@ -16,34 +16,29 @@ Array.prototype.pickRand = function() {
  */
 var GRID = {
     xMin: 0,
-    colNum: 9,
-    colWid: 101,
     xMax: 909,
+    numCols: 9,
+    colWidth: 101,
+    
     
     yMin: 0,
-    rowNum: 7,
-    rowHei: 83,
+    yMax: 581,
+    numRows: 7,
+    rowHeight: 83,
     rowHeiOffset: 58,
-    yMax: 581
+
 };
 
+var PLAYERSPEED = 6;
+var BOUNCE = 11;
+
+var ENEMYGEOM = {ctrX:50, ctrY:42, radius:35};
+var TILEGEOM = {ctrX:50, ctrY:83, radius:0}
+var GOODYGEOM = {ctrx:50, ctrY:0};
+var rowsWithEnemies = {min:1,max:7};
 
 
-var config = {
-    grid: {
-        colWidth: 101,
-        rowOffset: 58,
-        rowHeight: 83,
-        numRows: 7,
-        numCols: 9,
-        xMin: 0,
-        yMin: 0
-    }
-};
-config.grid.xMax = config.grid.colWidth * config.grid.numCols;
-config.grid.yMax = config.grid.rowHeight * config.grid.numRows;
 
-var rowsWithEnemies = {min:1,max:6};
 
 
 /*
@@ -53,16 +48,15 @@ var rowsWithEnemies = {min:1,max:6};
  * identities for Tile objects stored therein.
  * It does not currently have any sub- or super-classes.
  */
-var Map = function(rows, cols) {
-    this.rows = rows;
-    this.cols = cols;
+var Map = function(numRows, numCols) {
+    this.numRows = numRows;
+    this.numCols = numCols;
     this.matrix = [];
 }
 
-
 Map.prototype.render = function(){
-    for (var i = 0; i < this.rows; i++) {
-        for (var j =0; j < this.cols; j++) {
+    for (var i = 0; i < this.numRows; i++) {
+        for (var j =0; j < this.numCols; j++) {
             this.matrix[i][j].render();
         }
     }
@@ -70,36 +64,37 @@ Map.prototype.render = function(){
 
 Map.prototype.generate = function(pWater,pStone){
     var draftMatrix = [];
-
-    for (var i = 0; i < this.rows; i ++) {
+    for (var i = 0; i < this.numRows; i ++) {
         draftMatrix[i] = [];
-        for (var j = 0; j < this.cols; j++) {
-            var what;
+        for (var j = 0; j < this.numCols; j++) {
+            var groundString;
             if (i==0) {
-                if (j==0) {what = 'grass'}
-                else {what = 'water'}
-            } else if (i == config.grid.numRows && j ==config.grid.numCols) {
-                what = 'stone'
+                if (j==0) {groundString = 'grass'}
+                else {groundString = 'water'}
+            } else if (i == (GRID.numRows - 1) && j == (GRID.numCols-1)) {
+                groundString = 'stone'
             } else {
-                what = (Math.random() < pWater ? 'water' : Math.random() < pStone ? 'stone' : 'grass');
+                groundString = (Math.random() < pWater ? 'water' : Math.random() < pStone ? 'stone' : 'grass');
             }
-            draftMatrix[i][j] = what;
+            draftMatrix[i][j] = groundString;
         }
     }
 
     /* This builds the matrix full of Tile objects based on 
      * the draft matrix full of strings.
      */
-    for (var i = 0; i < this.rows; i ++) {
+    for (var i = 0; i < this.numRows; i ++) {
         this.matrix[i] = [];
-        for (var j = 0; j < this.cols; j++) {
+        for (var j = 0; j < this.numCols; j++) {
             this.matrix[i][j] = new Tile(i,j,draftMatrix[i][j]);
         }
     }
-
-    this.matrix[0][0] = new Tile(0,0,'grass'),
-    this.matrix[6][8] = new Tile(6,8,'stone')
 };
+
+
+
+
+
 
 
 
@@ -108,110 +103,107 @@ Map.prototype.generate = function(pWater,pStone){
 /* The Enemy, Player and Tile classes have several attributes in common, 
  * which are factored out into a Entity class constructor.
  */
-var Entity = function(loc, imgUrl, imgOffset, geom) {
+var Entity = function(loc, imgUrl, geom) {
     // This is the gameplay coordinates.
     this.loc = loc;
     // This is the image source url.
     this.imgUrl = imgUrl;
-    // This describes the offset from the Entity center point to image origin point. 
-    this.imgOffset = imgOffset; 
     // This describes geometry relevant to collisions and other gameplay.
     this.geom = geom;
 };
+
 // Any Entity can be called on to render itself.
 Entity.prototype.render = function() {
-    if (this instanceof Player) {
-    //console.log(this);
-    }
-    ctx.drawImage(Resources.get(this.imgUrl), this.loc.x, this.loc.y);
+    ctx.drawImage(  
+        Resources.get(this.imgUrl),
+        this.loc.x - this.geom.ctrX,
+        this.loc.y - this.geom.ctrY
+    );
 };
+
 
 
 
 
 /* Tile is a subclass of Entity. If goodies turn out to have 
  * characteristics in common with Tile, I may create "Living" and
- * "InLiving" subclasses.
+ * "NonLiving" subclasses.
  */
-var Tile = function(row, col, terrain) {
+var Tile = function(rowID, colID, groundType) {
+    var geom = TILEGEOM;
     Entity.call(
         this,
-        {x:(col*config.grid.colWidth),y:(row*config.grid.rowHeight-50)},
-        'images/block-%data%.png'.replace('%data%', terrain),
-        null,   // no current imgOffset determined
-        null);  // no current geom determined
-    this.row = row;
-    this.col = col;
-    this.hasGirl = false;
-    this.hasEnemy = false;
-    this.hasGoody = false;
+        {
+            x:(colID*GRID.colWidth+geom.ctrX),
+            y:(rowID*GRID.rowHeight+geom.ctrY-50)
+        },
+        'images/block-%data%.png'.replace('%data%', groundType),
+        geom);
+    this.rowID = rowID;
+    this.colID = colID;
+    this.groundType = groundType;
 }
 Tile.prototype = Object.create(Entity.prototype);
 Tile.prototype.constructor = Tile;
 
 
 
+
+
+
+
+
+var Goody = function(geom, rowID, colID, goodyType, grabEffect) {
+    Entity.call(
+        this,
+        loc=null,
+        imgUrl=null,
+        geom=null
+     );
+    this.goodyType = goodyType;
+    this.grabEffect = grabEffect;
+}
+
+Goody.prototype = Object.create(Entity.prototype);
+Goody.prototype.constructor = Goody;
+
+
+
+
+
+
 /* This is a class for all Living things. This is a subclass 
  * of Entity that is super to all classes of things that move around.
  */
-var Living = function(loc, imgUrl, imgOffset, geom, speed) {
+var Living = function(loc, imgUrl, geom, speed) {
     Entity.call(
         this,
         loc,
         imgUrl,
-        imgOffset,
         geom);
     this.speed = speed;
+    this.isInBounds = true;
 };
 Living.prototype = Object.create(Entity.prototype);
 Living.prototype.constructor = Living;
-Living.prototype.onWhatGround = function(){};
 
+Living.prototype.checkGround = function(){
+    var row, col;
+    var results = {ground: null, OOB: null};
+    row = Math.floor(this.loc.y / GRID.rowHeight);
+    col = Math.floor(this.loc.x / GRID.colWidth);
+    
+    if (col < 0 || col > GRID.numCols || row < 0 || row > GRID.numRows){
+        this.isInBounds = false;
+        return;
+    } else {
+    results.ground = aMap.matrix[row][col].groundType;
+    }
+    if (results.ground) return results;
+}
 
-
-
-/* Player is a subclass of Entity/Living inheritance.
- */
-var Player = function(whichGirl) {
-    Living.call(
-        this,
-        {x:0,y:-60},
-        'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
-        null,
-        null,
-        5
-    );
-    this.veloc = {x:0, y:0};
-};
-Player.prototype = Object.create(Living.prototype);
-Player.prototype.constructor = Player;
-
-// This receives inpute strings from the keystroke listener. 
-Player.prototype.handleInput = function(key, onOff) {
-    this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
-    this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
-    if (onOff == 0) {this.veloc = {x:0, y:0}
-    console.log("x: ",this.loc.x, " y: ", this.loc.y);
-    };
-};
-
-Player.prototype.update = function(nav) {
-    // These logicals address boundary collisions.
-    if (this.loc.x < config.grid.xMin - 10) {
-        this.veloc.x = 0;
-        this.loc.x += 5;
-    } else if (this.loc.x > config.grid.xMax - config.grid.colWidth + 15) {
-        this.veloc.x = 0;
-        this.loc.x -= 5;
-    };
-    if (this.loc.y < config.grid.yMin-76) {
-        this.veloc.y = 0;
-        this.loc.y += 5;
-    } else if (this.loc.y > config.grid.yMax-140) {
-        this.veloc.y = 0;
-        this.loc.y -= 5;
-    };
-    // Now actually update the player location.
+Living.prototype.update = function() {
+    // Now actually update the living thing's location.
     this.loc.x += (this.speed * this.veloc.x);
     this.loc.y += (this.speed * this.veloc.y);
 };
@@ -224,53 +216,101 @@ Player.prototype.update = function(nav) {
 
 
 
+
+
+/* Player is a subclass of Entity/Living inheritance.
+ */
+var Player = function(whichGirl) {
+    Living.call(
+        this,
+        {
+            x:(GRID.colWidth/2),
+            y:(GRID.rowHeight/2)
+        }, 
+        'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
+        geom = {ctrX:50 , ctrY:115, radius: 35},
+        PLAYERSPEED
+    );
+    this.veloc = {x:0, y:0};
+};
+Player.prototype = Object.create(Living.prototype);
+Player.prototype.constructor = Player;
+
+// This receives inpute strings from the keystroke listener. 
+Player.prototype.handleInput = function(key, onOff) {
+    this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
+    this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
+    if (onOff == 0) {this.veloc = {x:0, y:0}
+    };
+};
+
+// This keeps the player in bounds.
+Player.prototype.checkEdge = function() {
+    if ((this.loc.x - this.geom.ctrX + this.geom.radius) < GRID.xMin) {
+        this.loc.x += BOUNCE
+    }
+    else if ((this.loc.x + this.geom.ctrX - this.geom.radius) > GRID.xMax) {
+        this.loc.x -= BOUNCE
+    }
+    else if ((this.loc.y - this.geom.radius) < GRID.yMin) {
+        this.loc.y += BOUNCE
+    }
+    else if ((this.loc.y) > GRID.yMax){
+        this.loc.y -= BOUNCE;  
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 /* Enemy is a subclass of Entity/Living inheritance.
  */
-var Enemy = function (row, direction, speed, loc, imgUrl) {
+var Enemy = function () {
+    var row, direction, speed, loc;
+    var geom = ENEMYGEOM;
+    // Randomize distinguishing attributes
+    row = [1,2,3].pickRand();
+    direction = ['right','left'].pickRand();
     // Call the superclass to build out an instance
     Living.call(
         this,
-        loc,
+        loc = {
+            x: (direction == 'right' ? (GRID.xMin - GRID.colWidth) : GRID.xMax),
+            y: (row-1)*GRID.rowHeight+geom.ctrY
+        },
         'images/bug-%data%.png'.replace('%data%',direction),
-        null,
-        null,
-        speed
+        geom,
+        speed = (direction == 'right' ? 1 : -1) * [1,2,2].pickRand() 
         ); 
     this.row = row;
     this.direction = direction;
     this.speed = speed;
-    this.isExpired = false;
-    this.ground = null;
+    this.veloc = {x:1,y:0};
 };
 
 Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
 
-Enemy.prototype.randAttr
-
-Enemy.prototype.outOfBounds = function(){
-    if (this.loc.x < GRID.xMin || this.loc.x > GRID.xMax) {
-        this.isExpired = true;
+Enemy.prototype.checkEdge = function() {
+    if (this.loc.x < (GRID.xMin - 2*GRID.colWidth) || this.loc.x > GRID.xMax) {
+        this.isInBounds = false;
     }
 }
 
-Enemy.prototype.update = function() {
-    this.loc.x += this.speed;
-};
 
 
 
-var makeEnemy = function(){
-    var row, direction, speed, loc;
-    row = [1,2,3,4,5].pickRand();
-    direction = ['right','left'].pickRand();
-    speed = (direction == 'right' ? 1 : -1) * [2,3,4,5].pickRand();
-    loc = {
-        x: (direction == 'right' ? 0 : GRID.xMax),
-        y: row*GRID.rowHei
-    }
-    return new Enemy(row, direction, speed, loc);
-}
+
+
+
 
 
 
@@ -284,15 +324,18 @@ Collection.prototype.render = function() {
         this.members[i].render();
     }
 }
+
 Collection.prototype.update = function() {
     for(var i=0; i< this.members.length; i++) {
-        if(Math.random()<0.01) console.log(this);
         this.members[i].update();
-        this.members[i].outOfBounds();
-        if(this.members[i].isExpired) this.members.splice(i,1);
-
+        this.members[i].checkEdge();
+        this.members[i].checkGround();
+        if(!this.members[i].isInBounds) {this.members.splice(i,1)};
     }
 }
+
+
+
 
 
 
@@ -305,12 +348,15 @@ var playerMoves = {
         37: 'left',
         38: 'up',
         39: 'right',
-        40: 'down'
+        40: 'down',
+        32: 'space'
     };
 
+
 document.addEventListener('keydown', function(e) {
-    player.handleInput(playerMoves[e.keyCode], true)
-}); 
+    player.handleInput(playerMoves[e.keyCode], true);
+    if (playerMoves[e.keyCode] == 'space') showStatus();
+}) 
 
 document.addEventListener('keyup', function(e) { 
     player.handleInput(playerMoves[e.keyCode], false);

@@ -25,12 +25,12 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime;
 
-    canvas.width = config.grid.xMax;
-    canvas.height = config.grid.yMax;
+    canvas.width = GRID.xMax;
+    canvas.height = GRID.yMax;
     doc.body.appendChild(canvas);
 
 
-    
+
     /* This function does some initial setup that should only occur once,
      * particularly setting the lastTime variable that is required for the
      * game loop.
@@ -38,15 +38,17 @@ var Engine = (function(global) {
     function init() {
         lastTime = Date.now();
         
-        aMap = new Map(config.grid.numRows,config.grid.numCols);
+        aMap = new Map(GRID.numRows,GRID.numCols);
         aMap.generate(0.3,0.3);
         player = new Player('horn');
         allEnemies = new Collection();
-        for (var i=0; i<7; i++) {
-            allEnemies.members.push(makeEnemy())
+        for (var i=0; i<1; i++) {
+            allEnemies.members.push(new Enemy());
         };
-
-
+        allGoodies = new Collection();
+        //for (var i=0; i<5; i++) {
+        //    allGoodies.members.push(new Goody());
+        //}
         main();
     }
 
@@ -82,9 +84,14 @@ var Engine = (function(global) {
      * how I choose to deal with entity collisions.
      */
     function update(dt) {
+        var spin = Math.random();
         allEnemies.update(dt);
+        player.checkEdge();
         player.update(dt);
-    };
+
+        if (spin < 0.025) allEnemies.members.push(new Enemy());
+        if (spin >0.9995) allGoodies.members.push(new Goody());
+    }
 
 
     /* This function draws the landscape, then calls renderEntities() to draw 
@@ -95,9 +102,12 @@ var Engine = (function(global) {
         // Render details about the game state;
         //dashboard.render();
         
-        // Render the landscape.
+        // Render the map.
         aMap.render();
         
+        //Render the goodies.
+        allGoodies.render();
+
         // Render the buggies.
         allEnemies.render();
 
