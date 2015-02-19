@@ -239,38 +239,24 @@ var Enemy = function (row, direction, speed, loc, imgUrl) {
     this.row = row;
     this.direction = direction;
     this.speed = speed;
-    this.dead = false;
+    this.isExpired = false;
     this.ground = null;
 };
 
 Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
 
-Enemy.prototype.checkBoundary = function(){};
+Enemy.prototype.randAttr
 
+Enemy.prototype.outOfBounds = function(){
+    if (this.loc.x < GRID.xMin || this.loc.x > GRID.xMax) {
+        this.isExpired = true;
+    }
+}
 
 Enemy.prototype.update = function() {
-    this.checkBoundary();
     this.loc.x += this.speed;
 };
-
-
-
-
-var Collection = function (){
-    this.members = [];
-}
-
-Collection.prototype.render = function() {
-    for (var i=0; i < this.members.length; i++) {
-        this.members[i].render();
-    }
-}
-Collection.prototype.update = function() {
-    for(var i=0; i < this.members.length; i++) {
-        this.members[i].update();
-    }
-}
 
 
 
@@ -287,16 +273,29 @@ var makeEnemy = function(){
 }
 
 
-/* The 'new' keyword is used to create a Player, per Pseudoclassical 
- * inheritance paterns.
- */
-var player = new Player('horn');
 
 
-var allEnemies = new Collection();
-for (var i=0; i<7; i++) {
-    allEnemies.members.push(makeEnemy())
-};
+var Collection = function (){
+    this.members = [];
+}
+
+Collection.prototype.render = function() {
+    for (var i=0; i < this.members.length; i++) {
+        this.members[i].render();
+    }
+}
+Collection.prototype.update = function() {
+    for(var i=0; i< this.members.length; i++) {
+        if(Math.random()<0.01) console.log(this);
+        this.members[i].update();
+        this.members[i].outOfBounds();
+        if(this.members[i].isExpired) this.members.splice(i,1);
+
+    }
+}
+
+
+
 
 
 /* This listens for key presses, translates the 'allowed' keys to 
@@ -309,12 +308,6 @@ var playerMoves = {
         40: 'down'
     };
 
-
-var aMap = new Map(config.grid.numRows,config.grid.numCols);
-aMap.generate(0.3,0.3);
-
-
-
 document.addEventListener('keydown', function(e) {
     player.handleInput(playerMoves[e.keyCode], true)
 }); 
@@ -322,4 +315,3 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('keyup', function(e) { 
     player.handleInput(playerMoves[e.keyCode], false);
 });
-

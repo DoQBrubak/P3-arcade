@@ -29,6 +29,28 @@ var Engine = (function(global) {
     canvas.height = config.grid.yMax;
     doc.body.appendChild(canvas);
 
+
+    
+    /* This function does some initial setup that should only occur once,
+     * particularly setting the lastTime variable that is required for the
+     * game loop.
+     */
+    function init() {
+        lastTime = Date.now();
+        
+        aMap = new Map(config.grid.numRows,config.grid.numCols);
+        aMap.generate(0.3,0.3);
+        player = new Player('horn');
+        allEnemies = new Collection();
+        for (var i=0; i<7; i++) {
+            allEnemies.members.push(makeEnemy())
+        };
+
+
+        main();
+    }
+
+
     /* This function serves as the kickoff point for the game loop itself
      * and handles properly calling the update and render methods.
      */
@@ -54,14 +76,6 @@ var Engine = (function(global) {
         win.requestAnimationFrame(main);
     };
 
-    /* This function does some initial setup that should only occur once,
-     * particularly setting the lastTime variable that is required for the
-     * game loop.
-     */
-    function init() {
-        lastTime = Date.now();
-        main();
-    }
 
     /* This is called by main(). This calls all functions used to 
      * update entities' data. Use of checkCollisions() is optional based on 
