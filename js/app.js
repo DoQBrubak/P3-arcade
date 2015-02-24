@@ -11,15 +11,23 @@ Array.prototype.pickRand = function() {
 };
 
 
-/* The CONFIG object holds settings that can be tweaked without 
+/* The GRID object holds settings that can be tweaked without 
  * having to dig around all the class constructors. 
  */
-var GRID = {
+
+var DASHBOARD = {
     xMin: 0,
     xMax: 909,
+    yMin: 0,
+    yMax: 50,
+    BG1: 'grey'
+};
+
+var GRID = {
+    xMin: 10,
+    xMax: 919,
     numCols: 9,
     colWidth: 101,
-    
     
     yMin: 0,
     yMax: 581,
@@ -33,9 +41,49 @@ var PLAYERSPEED = 6;
 var BOUNCE = 11;
 
 var ENEMYGEOM = {ctrX:50, ctrY:42, radius:35};
-var TILEGEOM = {ctrX:50, ctrY:83, radius:0}
+var TILEGEOM = {ctrX:50, ctrY:83, radius:0};
 var GOODYGEOM = {ctrx:50, ctrY:0};
-var rowsWithEnemies = {min:1,max:7};
+var BOTTOMBUFFER = 60;
+
+var GIRLS = ['cat', 'horn', 'pink', 'royal'];
+
+var SPLASH = {
+    BG1: '#5f74e2', 
+    BG2: '#2efe2e', 
+    TXTCOLOR: "#000066",
+    MSG: {
+        preGame: [
+            'Welcome to Teen Girl Squad vs Buggers.',
+            'Press >SPACE< to begin.'],
+        pauseGame: [
+            'The game is now paused',
+            'Not going to score many points that way...'],
+        postGame: [
+            'The Teen Girl Squad was eaten by bugs.',
+            'Press >SPACE< to play again.']
+    }
+};
+
+
+/* This object stores properties and capabilities relevant to
+ * the state of the game.
+ */
+var game = {
+    state: "preGame",
+    score: 0,
+    leader: "cat",
+    team: [],
+    level: 1,
+    toggle: function() {
+        if (this.state == "preGame") {this.state = "inGame"}
+        else if (this.state == "inGame") {this.state = "pauseGame"}
+        else if (this.state == "pauseGame") {this.state = "inGame"}
+        else if (this.state == "postGame") {this.state = "inGame"}
+    }
+};
+
+
+
 
 
 
@@ -187,29 +235,42 @@ var Living = function(loc, imgUrl, geom, speed) {
 Living.prototype = Object.create(Entity.prototype);
 Living.prototype.constructor = Living;
 
-Living.prototype.checkGround = function(){
+Living.prototype.checkGround = function(map){
     var row, col;
-    var results = {ground: null, OOB: null};
     row = Math.floor(this.loc.y / GRID.rowHeight);
     col = Math.floor(this.loc.x / GRID.colWidth);
-    
-    if (col < 0 || col > GRID.numCols || row < 0 || row > GRID.numRows){
-        this.isInBounds = false;
-        return;
-    } else {
-    results.ground = aMap.matrix[row][col].groundType;
+    if (map.matrix[Number(row)][Number(col)] && Math.random()<0.05) {
+        console.log( aMap.matrix[row][col].groundType );
     }
-    if (results.ground) return results;
 }
 
+
+
+/* The update function for a given entity will run a number of functions to 
+ * evaluate for changes in its status before finally actually updating its 
+ * location.
+ */ 
 Living.prototype.update = function() {
-    // Now actually update the living thing's location.
+    /* checkEdge is defined separately for Player and Enemy, and leads to 
+    * different results for these two main Entity types.
+    */
+    this.checkEdge();
+
+
+    /* Every Living thing can evaluate the ground it is currently located on, 
+     * leading to different behavior (primarily an adjustment to speed).
+     */
+    //this.checkGround(); // Check the ground to determine appropriate velocity.
+
+    if (this.isInBounds) {this.move()};
+}
+
+
+// Actually move the living thing's location.
+Living.prototype.move = function() {
     this.loc.x += (this.speed * this.veloc.x);
     this.loc.y += (this.speed * this.veloc.y);
 };
-
-
-
 
 
 
@@ -238,13 +299,19 @@ Player.prototype.constructor = Player;
 
 // This receives inpute strings from the keystroke listener. 
 Player.prototype.handleInput = function(key, onOff) {
+    
+
     this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
     this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
-    if (onOff == 0) {this.veloc = {x:0, y:0}
-    };
-};
+    if (onOff == 0) {this.veloc = {x:0, y:0};
+    }
+}
 
-// This keeps the player in bounds.
+/* This keeps the player in bounds by immediately updating her position. 
+ * This code is fairly verbose, but my attempts 
+ * at making it more consise tended up to mess up the velocity property and led 
+ * to glitches.
+ */
 Player.prototype.checkEdge = function() {
     if ((this.loc.x - this.geom.ctrX + this.geom.radius) < GRID.xMin) {
         this.loc.x += BOUNCE
@@ -260,6 +327,16 @@ Player.prototype.checkEdge = function() {
     }
 }
 
+// This checks for enemy collisions.
+Player.prototype.checkEnemy = function() {
+    var a = this.loc
+    for (var i = 0; i < allEnemies.length; i++){
+        var b = allEnemies[i].loc;
+        if ( Math.sqrt( Math.pow( (a.x - b.x),2 ) + Math.pow( (a.y - b.y) ),2 ) < 50 ) {
+            console.log("BUG CONTACT");
+        }
+    }
+}
 
 
 
@@ -277,13 +354,13 @@ var Enemy = function () {
     var row, direction, speed, loc;
     var geom = ENEMYGEOM;
     // Randomize distinguishing attributes
-    row = [1,2,3].pickRand();
+    row = [1,2,3,4,5,6].pickRand();
     direction = ['right','left'].pickRand();
     // Call the superclass to build out an instance
     Living.call(
         this,
         loc = {
-            x: (direction == 'right' ? (GRID.xMin - GRID.colWidth) : GRID.xMax),
+            x: (direction == 'right' ? (GRID.xMin - GRID.colWidth) : (GRID.xMax + GRID.colWidth)),
             y: (row-1)*GRID.rowHeight+geom.ctrY
         },
         'images/bug-%data%.png'.replace('%data%',direction),
@@ -299,8 +376,12 @@ var Enemy = function () {
 Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
 
+
+/* The Enemy checkEdge function is unlike that for the Player in that it 
+ * leads to the extenction - rather than repositioning - of said Enemy.
+ */
 Enemy.prototype.checkEdge = function() {
-    if (this.loc.x < (GRID.xMin - 2*GRID.colWidth) || this.loc.x > GRID.xMax) {
+    if (this.loc.x < (GRID.xMin - (2*GRID.colWidth)) || this.loc.x > GRID.xMax + (2*GRID.colWidth)) {
         this.isInBounds = false;
     }
 }
@@ -315,22 +396,19 @@ Enemy.prototype.checkEdge = function() {
 
 
 
-var Collection = function (){
+var Collection = function (dt){
     this.members = [];
+}
+
+Collection.prototype.update = function() {
+    for(var i=0; i<this.members.length; i++) {
+        this.members[i].update();
+    }
 }
 
 Collection.prototype.render = function() {
     for (var i=0; i < this.members.length; i++) {
         this.members[i].render();
-    }
-}
-
-Collection.prototype.update = function() {
-    for(var i=0; i< this.members.length; i++) {
-        this.members[i].update();
-        this.members[i].checkEdge();
-        this.members[i].checkGround();
-        if(!this.members[i].isInBounds) {this.members.splice(i,1)};
     }
 }
 
@@ -344,7 +422,7 @@ Collection.prototype.update = function() {
 /* This listens for key presses, translates the 'allowed' keys to 
  * strings, and sends a string to Player.handleInput()
  */
-var playerMoves = {
+var validKeys = {
         37: 'left',
         38: 'up',
         39: 'right',
@@ -354,10 +432,12 @@ var playerMoves = {
 
 
 document.addEventListener('keydown', function(e) {
-    player.handleInput(playerMoves[e.keyCode], true);
-    if (playerMoves[e.keyCode] == 'space') showStatus();
+    player.handleInput(validKeys[e.keyCode], true);
 }) 
 
 document.addEventListener('keyup', function(e) { 
-    player.handleInput(playerMoves[e.keyCode], false);
-});
+    player.handleInput(validKeys[e.keyCode], false);
+    if (validKeys[e.keyCode] == 'space') { game.toggle() };
+})
+
+
