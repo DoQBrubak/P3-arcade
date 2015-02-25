@@ -23,40 +23,24 @@ var Engine = (function(global) {
         win = global.window,
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
-        lastTime; 
+        lastTime;
+        //frame;
 
-
-    canvas.width = GRID.xMax;
-    canvas.height = DASHBOARD.yMax + GRID.yMax;
+    canvas.width = CANVAS.width;
+    canvas.height = CANVAS.height;
     doc.body.appendChild(canvas);
 
 
 
-    /* This function does some initial setup that should only occur once,
-     * particularly setting the lastTime variable that is required for the
-     * game loop.
+    /* This function does setup that only occurs once, and sets the 
+     * lastTime variable that is required for the game loop.
      */
     function init() {
         lastTime = Date.now();
-        
-
-
-
-        aMap = new Map(GRID.numRows,GRID.numCols);
-        aMap.generate(0.3,0.3);
-
-        player = new Player('horn');
-        
-        allEnemies = new Collection();
-        for (var i=0; i<3; i++) {
-            allEnemies.members.push(new Enemy());
-        };
-        allGoodies = new Collection();
-        //for (var i=0; i<5; i++) {
-        //    allGoodies.members.push(new Goody());
-        //}
+        game.init();
         main();
     }
+
 
 
     /* This function serves as the kickoff point for the game loop itself
@@ -71,7 +55,7 @@ var Engine = (function(global) {
          * it may be used for smooth animation.
          */
         update(dt);
-        
+
         render();
 
         /* Set lastTime, which will be referrenced the next time dt gets 
@@ -92,12 +76,12 @@ var Engine = (function(global) {
      */
     function update(dt) {
         var spin = Math.random();
-        allEnemies.update(dt);
+        enemies.update(dt);
         player.checkEdge();
         player.checkEnemies();
         player.update(dt);
-        if (spin < 0.01) allEnemies.members.push(new Enemy());
-        if (spin >0.9995) allGoodies.members.push(new Goody());
+        if (spin < 0.002) enemies.members.push(new Enemy());
+        //if (spin >0.9995) goodies.members.push(new Goody());
     }
 
 
@@ -105,26 +89,34 @@ var Engine = (function(global) {
      * all the sprites. This is called once per tick of the game engine.
      */
     function render() {
+        
+
         if (game.state != "inGame") {
             splash(game.state);
         } else {
 
         // Render details about the game state;
-        //dashboard.render();
+        //dash.render();
         
         // Render the map.
-        aMap.render();
+        map.render();
         
         //Render the goodies.
-        allGoodies.render();
+        //goodies.render();
 
         // Render the buggies.
-        allEnemies.render();
+        enemies.render();
 
         // Render the player.
         player.render();
-        }
+        //frame.render();        
     };
+    ctx.fillStyle = SPLASH.txtcolor;
+    var fm = frame.members;
+    for (var i = 0; i < frame.members.length; i++){
+        ctx.fillRect(fm[i][0],fm[i][1],fm[i][2],fm[i][3]);
+    }
+}
 
 
 
@@ -133,23 +125,30 @@ var Engine = (function(global) {
     function splash(gameState) {
             var width = GRID.xMax,
                 height = GRID.yMax;
-            
-
-            ctx.fillStyle = SPLASH.BG1;
+            ctx.fillStyle = SPLASH.bg1;
             ctx.fillRect(0,0,width,height);
-            ctx.fillStyle = SPLASH.BG2;
+            ctx.fillStyle = SPLASH.bg2;
             ctx.fillRect(width*0.1,height*0.1,width*0.8,height*0.8);
             splashText(gameState);
         
     }
 
     function splashText(gameState) {
-        ctx.fillStyle = SPLASH.TXTCOLOR;
+        ctx.fillStyle = SPLASH.txtcolor;
         ctx.font = "30px Arial";
-        ctx.strokeText(SPLASH.MSG[gameState][0],150,100);
-        ctx.strokeText(SPLASH.MSG[gameState][1],150,150); 
+        ctx.strokeText(SPLASH.msg[gameState][0],150,100);
+        ctx.strokeText(SPLASH.msg[gameState][1],150,150); 
     }
 
+    function scoreboard() {
+        ctx.fillStyle = SPLASH.txtcolor;
+        ctx.fillRect()
+    }
+
+    function makeFrame() {
+        ctx.fillStyle = SPLASH.txtcolor;
+        ctx.fillRect(DASH.xMin,DASH.yMin,DASH.xMax,50);
+    }
     
 
     /* Go ahead and load all of the images we know we're going to need to

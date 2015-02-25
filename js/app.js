@@ -15,29 +15,40 @@ Array.prototype.pickRand = function() {
  * having to dig around all the class constructors. 
  */
 
-var DASHBOARD = {
-    xMin: 0,
-    xMax: 909,
-    yMin: 0,
-    yMax: 50,
-    BG1: 'grey'
-};
+
+var NUMROWS = 7;
+var NUMCOLS = 9;
+var FRAMETHICK = 10;
+var DASHTHICK = 50;
+var ROWHEIGHT = 83;
+var COLWIDTH = 101;
 
 var GRID = {
-    xMin: 10,
-    xMax: 919,
-    numCols: 9,
-    colWidth: 101,
-    
-    yMin: 0,
-    yMax: 581,
-    numRows: 7,
-    rowHeight: 83,
-    rowHeiOffset: 58,
-
+    width: NUMCOLS * COLWIDTH,
+    height: NUMROWS * ROWHEIGHT
 };
 
+var CANVAS = {
+    xMin: 0,
+    yMin: 0,
+    width: 2*FRAMETHICK + GRID.width,
+    height: DASHTHICK + GRID.height + FRAMETHICK
+};
+CANVAS.xMax = CANVAS.xMin + CANVAS.width;
+CANVAS.yMax = CANVAS.yMin + CANVAS.height;
+
+GRID.xMin = CANVAS.xMin + FRAMETHICK;
+GRID.yMin = CANVAS.yMin + DASHTHICK;
+GRID.xMax = GRID.xMin + GRID.width;
+GRID.yMax = GRID.yMin + GRID.height;
+
+
+
+
+
+
 var PLAYERSPEED = 6;
+var PLAYERSTARTLOC =  {x:(COLWIDTH/2), y:(ROWHEIGHT/2)};
 var BOUNCE = 11;
 
 var ENEMYGEOM = {ctrX:50, ctrY:42, radius:35};
@@ -48,10 +59,10 @@ var BOTTOMBUFFER = 60;
 var GIRLS = ['cat', 'horn', 'pink', 'royal'];
 
 var SPLASH = {
-    BG1: '#5f74e2', 
-    BG2: '#2efe2e', 
-    TXTCOLOR: "#000066",
-    MSG: {
+    bg1: '#5f74e2', 
+    bg2: '#2efe2e', 
+    txtcolor: "#000066",
+    msg: {
         preGame: [
             'Welcome to Teen Girl Squad vs Buggers.',
             'Press >SPACE< to begin.'],
@@ -64,6 +75,7 @@ var SPLASH = {
     }
 };
 
+//var player = new Player('horn');
 
 /* This object stores properties and capabilities relevant to
  * the state of the game.
@@ -72,14 +84,42 @@ var game = {
     state: "preGame",
     score: 0,
     leader: "cat",
-    team: [],
+    team: ["horn"],
     level: 1,
-    toggle: function() {
-        if (this.state == "preGame") {this.state = "inGame"}
-        else if (this.state == "inGame") {this.state = "pauseGame"}
-        else if (this.state == "pauseGame") {this.state = "inGame"}
-        else if (this.state == "postGame") {this.state = "inGame"}
+    toggle: function(stateIn) {
+        var map = {
+            preGame:"inGame",
+            inGame:"pauseGame",
+            pauseGame: "inGame",
+            postGame: "inGame"
+        };
+        this.state = map[stateIn];
+    },
+    death: function() {
+        console.log("Death!");
+        player.whichGirl = 'cat';
+        player.loc = PLAYERSTARTLOC;
+        /*if (this.team.length == 0) {this.state = "postGame"}
+        else (player = new Player(this.team.shift()));*/
+    },
+    init: function() {
+        player = new Player('horn');
+        map = new Map(NUMROWS,NUMCOLS);
+        map.generate(0.3,0.3);
+        enemies = new Collection();
+        for (var i=0; i<3; i++) {enemies.members.push(new Enemy())};
+        goodies = new Collection();
     }
+};
+
+
+var frame = {
+    members: [
+        [0,0,CANVAS.width,DASHTHICK],
+        [0,0,FRAMETHICK,CANVAS.height],
+        [CANVAS.width,0,-FRAMETHICK,CANVAS.height],
+        [0,CANVAS.height,CANVAS.width,-FRAMETHICK]
+    ]
 };
 
 
@@ -87,11 +127,33 @@ var game = {
 
 
 
+var Collection = function (dt){
+    this.members = [];
+}
+
+Collection.prototype.update = function() {
+    for(var i=0; i<this.members.length; i++) {
+        this.members[i].update();
+    }
+}
+
+Collection.prototype.render = function() {
+    for (var i=0; i < this.members.length; i++) {
+        this.members[i].render();
+    }
+}
 
 
-/*
- * The Map class goes here.
- * A Map is comprised of a matrix (Array of Arrays), in which each 
+
+
+
+
+
+
+
+
+
+/* A Map is comprised of a matrix (Array of Arrays), in which each 
  * first- and second- order index corresponds to the row and col 
  * identities for Tile objects stored therein.
  * It does not currently have any sub- or super-classes.
@@ -102,6 +164,7 @@ var Map = function(numRows, numCols) {
     this.matrix = [];
 }
 
+
 Map.prototype.render = function(){
     for (var i = 0; i < this.numRows; i++) {
         for (var j =0; j < this.numCols; j++) {
@@ -111,20 +174,21 @@ Map.prototype.render = function(){
 }
 
 Map.prototype.generate = function(pWater,pStone){
-    var draftMatrix = [];
+    var x = [];
     for (var i = 0; i < this.numRows; i ++) {
-        draftMatrix[i] = [];
+        x[i] = [];
         for (var j = 0; j < this.numCols; j++) {
-            var groundString;
+            var y;
+                m = Math.random();
             if (i==0) {
-                if (j==0) {groundString = 'grass'}
-                else {groundString = 'water'}
-            } else if (i == (GRID.numRows - 1) && j == (GRID.numCols-1)) {
-                groundString = 'stone'
+                if (j==0) {y = 'grass'}
+                else {y = 'water'}
+            } else if (i == (NUMROWS - 1) && j == (NUMCOLS-1)) {
+                y = 'stone'
             } else {
-                groundString = (Math.random() < pWater ? 'water' : Math.random() < pStone ? 'stone' : 'grass');
+                y = (m < pWater ? 'water' : m > (1 - pStone) ? 'stone' : 'grass');
             }
-            draftMatrix[i][j] = groundString;
+            x[i][j] = y;
         }
     }
 
@@ -134,7 +198,7 @@ Map.prototype.generate = function(pWater,pStone){
     for (var i = 0; i < this.numRows; i ++) {
         this.matrix[i] = [];
         for (var j = 0; j < this.numCols; j++) {
-            this.matrix[i][j] = new Tile(i,j,draftMatrix[i][j]);
+            this.matrix[i][j] = new Tile(i, j, x[i][j]);
         }
     }
 };
@@ -152,9 +216,9 @@ Map.prototype.generate = function(pWater,pStone){
  * which are factored out into a Entity class constructor.
  */
 var Entity = function(loc, imgUrl, geom) {
-    // This is the gameplay coordinates.
+    // The entity's coordinates: {x:val,y:val}
     this.loc = loc;
-    // This is the image source url.
+    // The entity's url source
     this.imgUrl = imgUrl;
     // This describes geometry relevant to collisions and other gameplay.
     this.geom = geom;
@@ -164,10 +228,13 @@ var Entity = function(loc, imgUrl, geom) {
 Entity.prototype.render = function() {
     ctx.drawImage(  
         Resources.get(this.imgUrl),
-        this.loc.x - this.geom.ctrX,
-        this.loc.y - this.geom.ctrY
+        GRID.xMin + this.loc.x - this.geom.ctrX,
+        GRID.yMin + this.loc.y - this.geom.ctrY
     );
 };
+
+
+
 
 
 
@@ -182,8 +249,8 @@ var Tile = function(rowID, colID, groundType) {
     Entity.call(
         this,
         {
-            x:(colID*GRID.colWidth+geom.ctrX),
-            y:(rowID*GRID.rowHeight+geom.ctrY-50)
+            x:(colID*COLWIDTH+geom.ctrX),
+            y:(rowID*ROWHEIGHT+geom.ctrY-50)
         },
         'images/block-%data%.png'.replace('%data%', groundType),
         geom);
@@ -220,6 +287,9 @@ Goody.prototype.constructor = Goody;
 
 
 
+
+
+
 /* This is a class for all Living things. This is a subclass 
  * of Entity that is super to all classes of things that move around.
  */
@@ -237,14 +307,12 @@ Living.prototype.constructor = Living;
 
 Living.prototype.checkGround = function(map){
     var row, col;
-    row = Math.floor(this.loc.y / GRID.rowHeight);
-    col = Math.floor(this.loc.x / GRID.colWidth);
+    row = Math.floor(this.loc.y / ROWHEIGHT);
+    col = Math.floor(this.loc.x / COLWIDTH);
     if (map.matrix[Number(row)][Number(col)] && Math.random()<0.05) {
         console.log( aMap.matrix[row][col].groundType );
     }
 }
-
-
 
 /* The update function for a given entity will run a number of functions to 
  * evaluate for changes in its status before finally actually updating its 
@@ -255,16 +323,9 @@ Living.prototype.update = function() {
     * different results for these two main Entity types.
     */
     this.checkEdge();
-
-
-    /* Every Living thing can evaluate the ground it is currently located on, 
-     * leading to different behavior (primarily an adjustment to speed).
-     */
-    //this.checkGround(); // Check the ground to determine appropriate velocity.
-
-    if (this.isInBounds) {this.move()};
+    //this.checkGround();
+    this.move();
 }
-
 
 // Actually move the living thing's location.
 Living.prototype.move = function() {
@@ -279,28 +340,27 @@ Living.prototype.move = function() {
 
 
 
+
+
 /* Player is a subclass of Entity/Living inheritance.
  */
 var Player = function(whichGirl) {
     Living.call(
         this,
-        {
-            x:(GRID.colWidth/2),
-            y:(GRID.rowHeight/2)
-        }, 
+        PLAYERSTARTLOC, 
         'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
         geom = {ctrX:50 , ctrY:115, radius: 35},
         PLAYERSPEED
     );
     this.veloc = {x:0, y:0};
+    this.whichGirl = whichGirl;
 };
+// These make Player a sub-class of Living.
 Player.prototype = Object.create(Living.prototype);
 Player.prototype.constructor = Player;
 
 // This receives inpute strings from the keystroke listener. 
 Player.prototype.handleInput = function(key, onOff) {
-    
-
     this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
     this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
     if (onOff == 0) {this.veloc = {x:0, y:0};
@@ -313,27 +373,29 @@ Player.prototype.handleInput = function(key, onOff) {
  * to glitches.
  */
 Player.prototype.checkEdge = function() {
-    if ((this.loc.x - this.geom.ctrX + this.geom.radius) < GRID.xMin) {
-        this.loc.x += BOUNCE
-    }
-    else if ((this.loc.x + this.geom.ctrX - this.geom.radius) > GRID.xMax) {
-        this.loc.x -= BOUNCE
-    }
-    else if ((this.loc.y - this.geom.radius) < GRID.yMin) {
-        this.loc.y += BOUNCE
-    }
-    else if ((this.loc.y) > GRID.yMax){
-        this.loc.y -= BOUNCE;  
-    }
+    var tx = this.loc.x,
+        ty = this.loc.y,
+        g = this.geom,
+        r = g.radius,
+        b = BOUNCE;
+
+    if ((tx - g.ctrX + r) < GRID.xMin) {
+        this.loc.x += b}
+    else if ((tx + g.ctrX - r) > GRID.xMax) {
+        this.loc.x -= b}
+    else if ((ty) < GRID.yMin) {
+        this.loc.y += b}
+    else if ((ty + g.ctrY) > GRID.yMax){
+        this.loc.y -= b};
 }
 
 // This checks for enemy collisions.
-Player.prototype.checkEnemy = function() {
-    var a = this.loc
-    for (var i = 0; i < allEnemies.length; i++){
-        var b = allEnemies[i].loc;
-        if ( Math.sqrt( Math.pow( (a.x - b.x),2 ) + Math.pow( (a.y - b.y) ),2 ) < 50 ) {
-            console.log("BUG CONTACT");
+Player.prototype.checkEnemies = function() {
+    var a = this.loc,
+        b = enemies.members;
+    for (var i = 0; i < b.length; i++){
+        if (Math.sqrt(Math.pow(a.x-b[i].loc.x,2) + Math.pow(a.y-b[i].loc.y,2))<60){
+            game.death();
         }
     }
 }
@@ -352,7 +414,6 @@ Player.prototype.checkEnemy = function() {
  */
 var Enemy = function () {
     var row, direction, speed, loc;
-    var geom = ENEMYGEOM;
     // Randomize distinguishing attributes
     row = [1,2,3,4,5,6].pickRand();
     direction = ['right','left'].pickRand();
@@ -360,11 +421,11 @@ var Enemy = function () {
     Living.call(
         this,
         loc = {
-            x: (direction == 'right' ? (GRID.xMin - GRID.colWidth) : (GRID.xMax + GRID.colWidth)),
-            y: (row-1)*GRID.rowHeight+geom.ctrY
+            x: (direction == 'right' ? (GRID.xMin - COLWIDTH) : (GRID.xMax + COLWIDTH)),
+            y: (row-1)*ROWHEIGHT+geom.ctrY
         },
         'images/bug-%data%.png'.replace('%data%',direction),
-        geom,
+        ENEMYGEOM,
         speed = (direction == 'right' ? 1 : -1) * [1,2,2].pickRand() 
         ); 
     this.row = row;
@@ -381,7 +442,7 @@ Enemy.prototype.constructor = Enemy;
  * leads to the extenction - rather than repositioning - of said Enemy.
  */
 Enemy.prototype.checkEdge = function() {
-    if (this.loc.x < (GRID.xMin - (2*GRID.colWidth)) || this.loc.x > GRID.xMax + (2*GRID.colWidth)) {
+    if (this.loc.x < (GRID.xMin - (2*COLWIDTH)) || this.loc.x > GRID.xMax + (2*COLWIDTH)) {
         this.isInBounds = false;
     }
 }
@@ -393,24 +454,6 @@ Enemy.prototype.checkEdge = function() {
 
 
 
-
-
-
-var Collection = function (dt){
-    this.members = [];
-}
-
-Collection.prototype.update = function() {
-    for(var i=0; i<this.members.length; i++) {
-        this.members[i].update();
-    }
-}
-
-Collection.prototype.render = function() {
-    for (var i=0; i < this.members.length; i++) {
-        this.members[i].render();
-    }
-}
 
 
 
@@ -437,7 +480,7 @@ document.addEventListener('keydown', function(e) {
 
 document.addEventListener('keyup', function(e) { 
     player.handleInput(validKeys[e.keyCode], false);
-    if (validKeys[e.keyCode] == 'space') { game.toggle() };
+    if (validKeys[e.keyCode] == 'space') { game.toggle(game.state) };
 })
 
 
