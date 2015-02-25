@@ -109,13 +109,9 @@ var Engine = (function(global) {
 
         // Render the player.
         player.render();
-        //frame.render();        
+        frame.render();
     };
-    ctx.fillStyle = SPLASH.txtcolor;
-    var fm = frame.members;
-    for (var i = 0; i < frame.members.length; i++){
-        ctx.fillRect(fm[i][0],fm[i][1],fm[i][2],fm[i][3]);
-    }
+
 }
 
 

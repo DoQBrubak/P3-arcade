@@ -112,15 +112,27 @@ var game = {
     }
 };
 
-
 var frame = {
     members: [
         [0,0,CANVAS.width,DASHTHICK],
         [0,0,FRAMETHICK,CANVAS.height],
         [CANVAS.width,0,-FRAMETHICK,CANVAS.height],
         [0,CANVAS.height,CANVAS.width,-FRAMETHICK]
-    ]
-};
+    ],
+    render: function() {
+        var fm = this.members;
+        ctx.fillStyle = SPLASH.txtcolor;
+        for (var i = 0; i < fm.length; i++) {
+            ctx.fillRect(  fm[i][0], fm[i][1], fm[i][2], fm[i][3]  );
+        }
+    }
+}
+
+
+
+
+
+
 
 
 
