@@ -56,12 +56,18 @@ var TILEGEOM = {ctrX:50, ctrY:83, radius:0};
 var GOODYGEOM = {ctrx:50, ctrY:0};
 var BOTTOMBUFFER = 60;
 
-var GIRLS = ['cat', 'horn', 'pink', 'royal'];
+
+var COLORS = {
+    bg1: '#5f74e2',
+    bg2: '#2efe2e', 
+    frame: "#CBB677",
+    txt1: "#000066"
+}
 
 var SPLASH = {
-    bg1: '#5f74e2', 
-    bg2: '#2efe2e', 
-    txtcolor: "#000066",
+    bg1: 1, 
+    bg2: 1,
+    txtcolor: 1,
     msg: {
         preGame: [
             'Welcome to Teen Girl Squad vs Buggers.',
@@ -80,11 +86,14 @@ var SPLASH = {
 /* This object stores properties and capabilities relevant to
  * the state of the game.
  */
+
+
+ /*
 var game = {
     state: "preGame",
     score: 0,
     leader: "cat",
-    team: ["horn"],
+    team: ["horn","pink","pink","cat"],
     level: 1,
     toggle: function(stateIn) {
         var map = {
@@ -100,7 +109,7 @@ var game = {
         player.whichGirl = 'cat';
         player.loc = PLAYERSTARTLOC;
         /*if (this.team.length == 0) {this.state = "postGame"}
-        else (player = new Player(this.team.shift()));*/
+        else (player = new Player(this.team.shift()));
     },
     init: function() {
         player = new Player('horn');
@@ -108,28 +117,89 @@ var game = {
         map.generate(0.3,0.3);
         enemies = new Collection();
         for (var i=0; i<3; i++) {enemies.members.push(new Enemy())};
-        goodies = new Collection();
+        //goodies = new Collection();
     }
 };
+*/
 
-var frame = {
-    members: [
+
+var Game = function() {
+    this.state = "preGame";
+    this.stateRef = {
+        preGame:"inGame",
+        inGame:"pauseGame",
+        pauseGame: "inGame",
+        postGame: "inGame"
+    };
+    this.level = 1;
+    this.score = 0;
+    this.teamAll = ['cat', 'horn', 'pink', 'royal'];
+    this.teamNow = ['pink'];
+    this.playerNow = 'horn';
+
+};
+
+Game.prototype.init = function() {
+    thePlayer = new Player(this.playerNow);
+    theMap = new Map(NUMROWS, NUMCOLS);
+    theMap.generate(0.2,0.2);
+    enemies = new Collection();
+    goodies = new Collection();
+}
+
+Game.prototype.toggle = function(state) {
+    this.state = this.stateRef[state];
+}
+
+Game.prototype.death = function() {
+    console.log("Death");
+};
+
+
+
+
+
+
+
+
+var Frame = function() {
+    this.members = [
         [0,0,CANVAS.width,DASHTHICK],
         [0,0,FRAMETHICK,CANVAS.height],
         [CANVAS.width,0,-FRAMETHICK,CANVAS.height],
         [0,CANVAS.height,CANVAS.width,-FRAMETHICK]
-    ],
-    render: function() {
-        var fm = this.members;
-        ctx.fillStyle = SPLASH.txtcolor;
-        for (var i = 0; i < fm.length; i++) {
-            ctx.fillRect(  fm[i][0], fm[i][1], fm[i][2], fm[i][3]  );
+    ];
+}
+
+Frame.prototype.render = function() {
+    var mem = this.members;
+        ctx.fillStyle = COLORS.frame;
+        for (var i = 0; i < mem.length; i++) {
+            ctx.fillRect(  mem[i][0], mem[i][1], mem[i][2], mem[i][3]  );
         }
-    }
 }
 
 
 
+
+
+
+
+
+var Dash = function(level,score,roster) {
+    this.reportLevel = ["Level: "+level,20,20];
+    this.reportScore = ["Score: "+score,40,20];
+    this.roster = roster;
+    this.teamUrl = 'images/girl-%data%-sm.png';
+    this.txtColor = COLORS.txt1;
+    this.txtFont =  "18px Arial"
+};
+    
+Dash.prototype.render = function() {
+    for (var i = 0; i < this.roster.length; i++){
+        ctx.drawImage(Resources.get(this.teamUrl.replace('%data%',this.roster[i])),500+i*50,0);
+    }
+}
 
 
 
@@ -186,7 +256,7 @@ Map.prototype.render = function(){
 }
 
 Map.prototype.generate = function(pWater,pStone){
-    var x = [];
+    var x = []; // An array
     for (var i = 0; i < this.numRows; i ++) {
         x[i] = [];
         for (var j = 0; j < this.numCols; j++) {
@@ -487,12 +557,12 @@ var validKeys = {
 
 
 document.addEventListener('keydown', function(e) {
-    player.handleInput(validKeys[e.keyCode], true);
+    thePlayer.handleInput(validKeys[e.keyCode], true);
 }) 
 
 document.addEventListener('keyup', function(e) { 
-    player.handleInput(validKeys[e.keyCode], false);
-    if (validKeys[e.keyCode] == 'space') { game.toggle(game.state) };
+    thePlayer.handleInput(validKeys[e.keyCode], false);
+    if (validKeys[e.keyCode] == 'space') { theGame.toggle(theGame.state) };
 })
 
 
