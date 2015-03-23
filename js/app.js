@@ -146,6 +146,23 @@ Game.prototype.death = function() {
     console.log("Death");
 };
 
+Game.prototype.splash = function() {
+    var width = GRID.xMax,
+        height = GRID.yMax;
+    ctx.fillStyle = COLORS.bg1;
+    ctx.fillRect(0,0,width,height);
+    ctx.fillStyle = COLORS.bg2;
+    ctx.fillRect(width*0.1,height*0.1,width*0.8,height*0.8);
+    ctx.fillStyle = COLORS.txt1;
+    ctx.font = "30px Arial";
+    ctx.strokeText(SPLASH.msg[this.state][0],150,100);
+    ctx.strokeText(SPLASH.msg[this.state][1],150,150); 
+}
+
+
+
+
+
 
 
 
