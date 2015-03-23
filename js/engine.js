@@ -39,8 +39,9 @@ var Engine = (function(global) {
         theGame = new Game();
         theGame.init();
         //game.init();
-        theFrame = new Frame();
-        theDash = new Dash(theGame.level,theGame.score,theGame.teamAll);
+        //TODO: Move both Frame and Dash into Game class.
+        //theFrame = new Frame();
+        theDash = new Dash(theGame.level,theGame.score,theGame.teamNow);
         main();
     }
 
@@ -94,28 +95,26 @@ var Engine = (function(global) {
             theGame.splash();
 
         } else {
-
-       /* Render the map. This comes first because the map is permanently
-        * "under" everything else.
-        */
+        /* Render the map. This comes first because the map is permanently
+         * "under" everything else.
+         */
         theMap.render();
 
-       /* Render the goodies. This comes next because the moving entities can
-        * walk "over" the goodies. 
-        */
+        /* Render the goodies. This comes next because the moving entities can
+         * walk "over" the goodies. 
+         */
         // TODO: build out Goodies class, Collection, and functionality.
         //theGoodies.render();
 
-       /* Render the bugs. This comes next because the bugs appear "under" the 
-        * player sprite.
-        */
+        /* Render the bugs. This comes next because the bugs appear "under" the 
+         * player sprite.
+         */
         enemies.render();
 
         // Render the player.
         thePlayer.render();
         
-
-        theFrame.render();
+        theGame.render();
         theDash.render();
         }
     }

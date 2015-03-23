@@ -57,6 +57,7 @@ var COLORS = {
     txt1: "#000066"
 }
 
+var TEAM = ['cat', 'horn', 'pink', 'royal'];
 
 
 
@@ -125,10 +126,23 @@ var Game = function() {
     };
     this.level = 1;
     this.score = 0;
-    this.teamAll = ['cat', 'horn', 'pink', 'royal'];
     this.teamNow = ['pink'];
     this.playerNow = 'horn';
+    this.frame = [
+        [0,0,CANVAS.width,DASH_THICKNESS],
+        [0,0,FRAME_THICKNESS,CANVAS.height],
+        [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
+        [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
+    ];
 };
+
+Game.prototype.render = function() {
+    ctx.fillStyle = COLORS.frame;
+    var frame = this.frame;
+    for (var i = 0; i < this.frame.length; i++) {
+        ctx.fillRect(this.frame[i][0], frame[i][1], frame[i][2], frame[i][3]);
+    }
+}
 
 Game.prototype.init = function() {
     thePlayer = new Player(this.playerNow);
@@ -168,7 +182,7 @@ Game.prototype.splash = function() {
 
 
 
-
+// THIS IS EXPERIMENTALLY BEING PACKED INSIDE THE GAME CLASS
 
 var Frame = function() {
     this.members = [
