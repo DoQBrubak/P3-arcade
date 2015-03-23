@@ -74,6 +74,14 @@ var SPLASH = {
             'Press >SPACE< to play again.']
 }};
 
+
+var FRAME = [
+        [0,0,CANVAS.width,DASH_THICKNESS],
+        [0,0,FRAME_THICKNESS,CANVAS.height],
+        [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
+        [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
+    ];
+
 //var player = new Player('horn');
 
 /* This object stores properties and capabilities relevant to
@@ -128,19 +136,12 @@ var Game = function() {
     this.score = 0;
     this.teamNow = ['pink'];
     this.playerNow = 'horn';
-    this.frame = [
-        [0,0,CANVAS.width,DASH_THICKNESS],
-        [0,0,FRAME_THICKNESS,CANVAS.height],
-        [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
-        [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
-    ];
 };
 
 Game.prototype.render = function() {
     ctx.fillStyle = COLORS.frame;
-    var frame = this.frame;
-    for (var i = 0; i < this.frame.length; i++) {
-        ctx.fillRect(this.frame[i][0], frame[i][1], frame[i][2], frame[i][3]);
+    for (var i = 0; i < FRAME.length; i++) {
+        ctx.fillRect(FRAME[i][0], FRAME[i][1], FRAME[i][2], FRAME[i][3]);
     }
 }
 
