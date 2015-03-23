@@ -16,46 +16,39 @@ Array.prototype.pickRand = function() {
  */
 
 
-var NUMROWS = 7;
-var NUMCOLS = 9;
-var FRAMETHICK = 10;
-var DASHTHICK = 50;
-var ROWHEIGHT = 83;
-var COLWIDTH = 101;
+var NUM_OF_ROWS = 7;
+var NUM_OF_COLS = 9;
+var FRAME_THICKNESS = 10;
+var DASH_THICKNESS = 50;
+var ROW_HEIGHT = 83;
+var COL_WIDTH = 101;
 
 var GRID = {
-    width: NUMCOLS * COLWIDTH,
-    height: NUMROWS * ROWHEIGHT
+    width: NUM_OF_COLS * COL_WIDTH,
+    height: NUM_OF_ROWS * ROW_HEIGHT
 };
 
 var CANVAS = {
     xMin: 0,
     yMin: 0,
-    width: 2*FRAMETHICK + GRID.width,
-    height: DASHTHICK + GRID.height + FRAMETHICK
+    width: 2*FRAME_THICKNESS + GRID.width,
+    height: DASH_THICKNESS + GRID.height + FRAME_THICKNESS
 };
 CANVAS.xMax = CANVAS.xMin + CANVAS.width;
 CANVAS.yMax = CANVAS.yMin + CANVAS.height;
 
-GRID.xMin = CANVAS.xMin + FRAMETHICK;
-GRID.yMin = CANVAS.yMin + DASHTHICK;
+GRID.xMin = CANVAS.xMin + FRAME_THICKNESS;
+GRID.yMin = CANVAS.yMin + DASH_THICKNESS;
 GRID.xMax = GRID.xMin + GRID.width;
 GRID.yMax = GRID.yMin + GRID.height;
 
 
-
-
-
-
-var PLAYERSPEED = 6;
-var PLAYERSTARTLOC =  {x:(COLWIDTH/2), y:(ROWHEIGHT/2)};
+var PLAYER_SPEED = 6;
+var PLAYER_START_LOC =  {x:(COL_WIDTH/2), y:(ROW_HEIGHT/2)};
 var BOUNCE = 11;
 
-var ENEMYGEOM = {ctrX:50, ctrY:42, radius:35};
-var TILEGEOM = {ctrX:50, ctrY:83, radius:0};
-var GOODYGEOM = {ctrx:50, ctrY:0};
-var BOTTOMBUFFER = 60;
-
+var ENEMY_GEOM = {ctrX:50, ctrY:42, radius:35};
+var TILE_GEOM = {ctrX:50, ctrY:83, radius:0};
 
 var COLORS = {
     bg1: '#5f74e2',
@@ -63,6 +56,9 @@ var COLORS = {
     frame: "#CBB677",
     txt1: "#000066"
 }
+
+
+
 
 var SPLASH = {
     bg1: 1, 
@@ -107,13 +103,13 @@ var game = {
     death: function() {
         console.log("Death!");
         player.whichGirl = 'cat';
-        player.loc = PLAYERSTARTLOC;
+        player.loc = PLAYER_START_LOC;
         /*if (this.team.length == 0) {this.state = "postGame"}
         else (player = new Player(this.team.shift()));
     },
     init: function() {
         player = new Player('horn');
-        map = new Map(NUMROWS,NUMCOLS);
+        map = new Map(NUM_OF_ROWS,NUM_OF_COLS);
         map.generate(0.3,0.3);
         enemies = new Collection();
         for (var i=0; i<3; i++) {enemies.members.push(new Enemy())};
@@ -136,12 +132,11 @@ var Game = function() {
     this.teamAll = ['cat', 'horn', 'pink', 'royal'];
     this.teamNow = ['pink'];
     this.playerNow = 'horn';
-
 };
 
 Game.prototype.init = function() {
     thePlayer = new Player(this.playerNow);
-    theMap = new Map(NUMROWS, NUMCOLS);
+    theMap = new Map(NUM_OF_ROWS, NUM_OF_COLS);
     theMap.generate(0.2,0.2);
     enemies = new Collection();
     goodies = new Collection();
@@ -164,10 +159,10 @@ Game.prototype.death = function() {
 
 var Frame = function() {
     this.members = [
-        [0,0,CANVAS.width,DASHTHICK],
-        [0,0,FRAMETHICK,CANVAS.height],
-        [CANVAS.width,0,-FRAMETHICK,CANVAS.height],
-        [0,CANVAS.height,CANVAS.width,-FRAMETHICK]
+        [0,0,CANVAS.width,DASH_THICKNESS],
+        [0,0,FRAME_THICKNESS,CANVAS.height],
+        [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
+        [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
     ];
 }
 
@@ -175,9 +170,8 @@ Frame.prototype.render = function() {
     var mem = this.members;
         ctx.fillStyle = COLORS.frame;
         for (var i = 0; i < mem.length; i++) {
-            ctx.fillRect(  mem[i][0], mem[i][1], mem[i][2], mem[i][3]  );
-        }
-}
+            ctx.fillRect(mem[i][0], mem[i][1], mem[i][2], mem[i][3]);
+}};
 
 
 
@@ -240,16 +234,16 @@ Collection.prototype.render = function() {
  * identities for Tile objects stored therein.
  * It does not currently have any sub- or super-classes.
  */
-var Map = function(numRows, numCols) {
-    this.numRows = numRows;
-    this.numCols = numCols;
+var Map = function(NUM_OF_ROWS, NUM_OF_COLS) {
+    this.NUM_OF_ROWS = NUM_OF_ROWS;
+    this.NUM_OF_COLS = NUM_OF_COLS;
     this.matrix = [];
 }
 
 
 Map.prototype.render = function(){
-    for (var i = 0; i < this.numRows; i++) {
-        for (var j =0; j < this.numCols; j++) {
+    for (var i = 0; i < this.NUM_OF_ROWS; i++) {
+        for (var j =0; j < this.NUM_OF_COLS; j++) {
             this.matrix[i][j].render();
         }
     }
@@ -257,15 +251,15 @@ Map.prototype.render = function(){
 
 Map.prototype.generate = function(pWater,pStone){
     var x = []; // An array
-    for (var i = 0; i < this.numRows; i ++) {
+    for (var i = 0; i < this.NUM_OF_ROWS; i ++) {
         x[i] = [];
-        for (var j = 0; j < this.numCols; j++) {
+        for (var j = 0; j < this.NUM_OF_COLS; j++) {
             var y;
                 m = Math.random();
             if (i==0) {
                 if (j==0) {y = 'grass'}
                 else {y = 'water'}
-            } else if (i == (NUMROWS - 1) && j == (NUMCOLS-1)) {
+            } else if (i == (NUM_OF_ROWS - 1) && j == (NUM_OF_COLS-1)) {
                 y = 'stone'
             } else {
                 y = (m < pWater ? 'water' : m > (1 - pStone) ? 'stone' : 'grass');
@@ -277,9 +271,9 @@ Map.prototype.generate = function(pWater,pStone){
     /* This builds the matrix full of Tile objects based on 
      * the draft matrix full of strings.
      */
-    for (var i = 0; i < this.numRows; i ++) {
+    for (var i = 0; i < this.NUM_OF_ROWS; i ++) {
         this.matrix[i] = [];
-        for (var j = 0; j < this.numCols; j++) {
+        for (var j = 0; j < this.NUM_OF_COLS; j++) {
             this.matrix[i][j] = new Tile(i, j, x[i][j]);
         }
     }
@@ -327,12 +321,12 @@ Entity.prototype.render = function() {
  * "NonLiving" subclasses.
  */
 var Tile = function(rowID, colID, groundType) {
-    var geom = TILEGEOM;
+    var geom = TILE_GEOM;
     Entity.call(
         this,
         {
-            x:(colID*COLWIDTH+geom.ctrX),
-            y:(rowID*ROWHEIGHT+geom.ctrY-50)
+            x:(colID*COL_WIDTH+geom.ctrX),
+            y:(rowID*ROW_HEIGHT+geom.ctrY-50)
         },
         'images/block-%data%.png'.replace('%data%', groundType),
         geom);
@@ -389,8 +383,8 @@ Living.prototype.constructor = Living;
 
 Living.prototype.checkGround = function(map){
     var row, col;
-    row = Math.floor(this.loc.y / ROWHEIGHT);
-    col = Math.floor(this.loc.x / COLWIDTH);
+    row = Math.floor(this.loc.y / ROW_HEIGHT);
+    col = Math.floor(this.loc.x / COL_WIDTH);
     if (map.matrix[Number(row)][Number(col)] && Math.random()<0.05) {
         console.log( aMap.matrix[row][col].groundType );
     }
@@ -429,10 +423,10 @@ Living.prototype.move = function() {
 var Player = function(whichGirl) {
     Living.call(
         this,
-        PLAYERSTARTLOC, 
+        PLAYER_START_LOC, 
         'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
         geom = {ctrX:50 , ctrY:115, radius: 35},
-        PLAYERSPEED
+        PLAYER_SPEED
     );
     this.veloc = {x:0, y:0};
     this.whichGirl = whichGirl;
@@ -503,11 +497,11 @@ var Enemy = function () {
     Living.call(
         this,
         loc = {
-            x: (direction == 'right' ? (GRID.xMin - COLWIDTH) : (GRID.xMax + COLWIDTH)),
-            y: (row-1)*ROWHEIGHT+geom.ctrY
+            x: (direction == 'right' ? (GRID.xMin - COL_WIDTH) : (GRID.xMax + COL_WIDTH)),
+            y: (row-1)*ROW_HEIGHT+geom.ctrY
         },
         'images/bug-%data%.png'.replace('%data%',direction),
-        ENEMYGEOM,
+        ENEMY_GEOM,
         speed = (direction == 'right' ? 1 : -1) * [1,2,2].pickRand() 
         ); 
     this.row = row;
@@ -524,7 +518,7 @@ Enemy.prototype.constructor = Enemy;
  * leads to the extenction - rather than repositioning - of said Enemy.
  */
 Enemy.prototype.checkEdge = function() {
-    if (this.loc.x < (GRID.xMin - (2*COLWIDTH)) || this.loc.x > GRID.xMax + (2*COLWIDTH)) {
+    if (this.loc.x < (GRID.xMin - (2*COL_WIDTH)) || this.loc.x > GRID.xMax + (2*COL_WIDTH)) {
         this.isInBounds = false;
     }
 }
