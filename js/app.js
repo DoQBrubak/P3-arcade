@@ -431,7 +431,7 @@ var Player = function(whichGirl) {
     this.veloc = {x:0, y:0};
     this.whichGirl = whichGirl;
 };
-// These make Player a sub-class of Living.
+// These certify Player as a sub-class of Living.
 Player.prototype = Object.create(Living.prototype);
 Player.prototype.constructor = Player;
 
@@ -465,7 +465,7 @@ Player.prototype.checkEdge = function() {
         this.loc.y -= b};
 }
 
-// This checks for enemy collisions.
+// This checks for collisions of the player against enemies.
 Player.prototype.checkEnemies = function() {
     var a = this.loc,
         b = enemies.members;
@@ -509,9 +509,10 @@ var Enemy = function () {
     this.speed = speed;
     this.veloc = {x:1,y:0};
 };
-
+// These certify Player as a sub-class of Living.
 Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
+
 
 
 /* The Enemy checkEdge function is unlike that for the Player in that it 

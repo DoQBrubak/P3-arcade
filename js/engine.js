@@ -15,16 +15,15 @@
  */
 
 var Engine = (function(global) {
-    /* Predefine the variables we'll be using within this scope,
-     * create the canvas element, grab the 2D context for that canvas
-     * set the canvas elements height/width and add it to the DOM.
+    /* Predefine the variables we'll be using within the Engine scope.
+     * Create the <canvas> element, grab the 2D "ctx", set the context 
+     * height and width, and add <canvas> to the DOM.
      */
     var doc = global.document,
         win = global.window,
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
         lastTime;
-        //frame;
 
     canvas.width = CANVAS.width;
     canvas.height = CANVAS.height;
