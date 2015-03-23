@@ -11,10 +11,9 @@ Array.prototype.pickRand = function() {
 };
 
 
-/* The GRID object holds settings that can be tweaked without 
- * having to dig around all the class constructors. 
+/* These are the constants. Note that GRID, CANVAS, FRAME,
+ * and PLAYER_START_LOC are dependent on higher constants.
  */
-
 
 var NUM_OF_ROWS = 7;
 var NUM_OF_COLS = 9;
@@ -34,6 +33,7 @@ var CANVAS = {
     width: 2*FRAME_THICKNESS + GRID.width,
     height: DASH_THICKNESS + GRID.height + FRAME_THICKNESS
 };
+
 CANVAS.xMax = CANVAS.xMin + CANVAS.width;
 CANVAS.yMax = CANVAS.yMin + CANVAS.height;
 
@@ -42,6 +42,12 @@ GRID.yMin = CANVAS.yMin + DASH_THICKNESS;
 GRID.xMax = GRID.xMin + GRID.width;
 GRID.yMax = GRID.yMin + GRID.height;
 
+var FRAME = [
+    [0,0,CANVAS.width,DASH_THICKNESS],
+    [0,0,FRAME_THICKNESS,CANVAS.height],
+    [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
+    [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
+];
 
 var PLAYER_SPEED = 6;
 var PLAYER_START_LOC =  {x:(COL_WIDTH/2), y:(ROW_HEIGHT/2)};
@@ -55,11 +61,9 @@ var COLORS = {
     bg2: '#2efe2e', 
     frame: "#CBB677",
     txt1: "#000066"
-}
+};
 
 var TEAM = ['cat', 'horn', 'pink', 'royal'];
-
-
 
 var SPLASH = {
     msg: {
@@ -75,12 +79,8 @@ var SPLASH = {
 }};
 
 
-var FRAME = [
-        [0,0,CANVAS.width,DASH_THICKNESS],
-        [0,0,FRAME_THICKNESS,CANVAS.height],
-        [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
-        [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
-    ];
+
+
 
 //var player = new Player('horn');
 
@@ -159,7 +159,7 @@ Game.prototype.toggle = function(state) {
 
 Game.prototype.death = function() {
     console.log("Death");
-};
+}
 
 Game.prototype.splash = function() {
     var width = GRID.xMax,
@@ -182,24 +182,6 @@ Game.prototype.splash = function() {
 
 
 
-
-// THIS IS EXPERIMENTALLY BEING PACKED INSIDE THE GAME CLASS
-
-var Frame = function() {
-    this.members = [
-        [0,0,CANVAS.width,DASH_THICKNESS],
-        [0,0,FRAME_THICKNESS,CANVAS.height],
-        [CANVAS.width,0,-FRAME_THICKNESS,CANVAS.height],
-        [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
-    ];
-}
-
-Frame.prototype.render = function() {
-    var mem = this.members;
-        ctx.fillStyle = COLORS.frame;
-        for (var i = 0; i < mem.length; i++) {
-            ctx.fillRect(mem[i][0], mem[i][1], mem[i][2], mem[i][3]);
-}};
 
 
 
