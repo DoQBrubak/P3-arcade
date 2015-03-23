@@ -1,0 +1,4 @@
+
+
+For the JS global "Date" object:
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now

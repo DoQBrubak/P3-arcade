@@ -61,9 +61,6 @@ var COLORS = {
 
 
 var SPLASH = {
-    bg1: 1, 
-    bg2: 1,
-    txtcolor: 1,
     msg: {
         preGame: [
             'Welcome to Teen Girl Squad vs Buggers.',
@@ -74,8 +71,7 @@ var SPLASH = {
         postGame: [
             'The Teen Girl Squad was eaten by bugs.',
             'Press >SPACE< to play again.']
-    }
-};
+}};
 
 //var player = new Player('horn');
 
@@ -203,21 +199,28 @@ Dash.prototype.render = function() {
 
 
 
+
+
 var Collection = function (dt){
     this.members = [];
 }
-
+/* A Collection instance can be called upon to update() itself, and it
+ * perfoms this by calling the udpate() function of each of its members.
+ */
 Collection.prototype.update = function() {
     for(var i=0; i<this.members.length; i++) {
         this.members[i].update();
-    }
-}
-
+}}
+/* A Collection instance can be called upon to render() itself, and it
+ * perfoms this by calling the render() function of each of its members.
+ */
 Collection.prototype.render = function() {
     for (var i=0; i < this.members.length; i++) {
         this.members[i].render();
-    }
-}
+}}
+
+
+
 
 
 
@@ -245,9 +248,7 @@ Map.prototype.render = function(){
     for (var i = 0; i < this.NUM_OF_ROWS; i++) {
         for (var j =0; j < this.NUM_OF_COLS; j++) {
             this.matrix[i][j].render();
-        }
-    }
-}
+}}}
 
 Map.prototype.generate = function(pWater,pStone){
     var x = []; // An array
@@ -265,8 +266,7 @@ Map.prototype.generate = function(pWater,pStone){
                 y = (m < pWater ? 'water' : m > (1 - pStone) ? 'stone' : 'grass');
             }
             x[i][j] = y;
-        }
-    }
+    }}
 
     /* This builds the matrix full of Tile objects based on 
      * the draft matrix full of strings.
@@ -275,8 +275,7 @@ Map.prototype.generate = function(pWater,pStone){
         this.matrix[i] = [];
         for (var j = 0; j < this.NUM_OF_COLS; j++) {
             this.matrix[i][j] = new Tile(i, j, x[i][j]);
-        }
-    }
+    }}
 };
 
 
@@ -292,7 +291,7 @@ Map.prototype.generate = function(pWater,pStone){
  * which are factored out into a Entity class constructor.
  */
 var Entity = function(loc, imgUrl, geom) {
-    // The entity's coordinates: {x:val,y:val}
+    // The entity's coordinates as an Object: {x:val,y:val}
     this.loc = loc;
     // The entity's url source
     this.imgUrl = imgUrl;
@@ -308,6 +307,9 @@ Entity.prototype.render = function() {
         GRID.yMin + this.loc.y - this.geom.ctrY
     );
 };
+
+
+
 
 
 
@@ -344,6 +346,7 @@ Tile.prototype.constructor = Tile;
 
 
 
+
 var Goody = function(geom, rowID, colID, goodyType, grabEffect) {
     Entity.call(
         this,
@@ -366,6 +369,8 @@ Goody.prototype.constructor = Goody;
 
 
 
+
+
 /* This is a class for all Living things. This is a subclass 
  * of Entity that is super to all classes of things that move around.
  */
@@ -378,8 +383,10 @@ var Living = function(loc, imgUrl, geom, speed) {
     this.speed = speed;
     this.isInBounds = true;
 };
+// This validates Living as a subclass of Entity
 Living.prototype = Object.create(Entity.prototype);
 Living.prototype.constructor = Living;
+
 
 Living.prototype.checkGround = function(map){
     var row, col;
@@ -418,7 +425,11 @@ Living.prototype.move = function() {
 
 
 
-/* Player is a subclass of Entity/Living inheritance.
+
+
+/* Player is a subclass of Living, which is a subclass of Entity.
+ * A Player instance can only be initialized with a "whichGirl"
+ * argument.
  */
 var Player = function(whichGirl) {
     Living.call(
@@ -431,7 +442,7 @@ var Player = function(whichGirl) {
     this.veloc = {x:0, y:0};
     this.whichGirl = whichGirl;
 };
-// These certify Player as a sub-class of Living.
+// These validates Player as a sub-class of Living.
 Player.prototype = Object.create(Living.prototype);
 Player.prototype.constructor = Player;
 
@@ -440,13 +451,10 @@ Player.prototype.handleInput = function(key, onOff) {
     this.veloc.x = ((key == 'right') * onOff) - ((key == 'left') * onOff);
     this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
     if (onOff == 0) {this.veloc = {x:0, y:0};
-    }
-}
+}}
 
-/* This keeps the player in bounds by immediately updating her position. 
- * This code is fairly verbose, but my attempts 
- * at making it more consise tended up to mess up the velocity property and led 
- * to glitches.
+/* The checkEdge function keeps the player in bounds by immediately updating her 
+ * position if she encounters a screen edge.
  */
 Player.prototype.checkEdge = function() {
     var tx = this.loc.x,
@@ -456,12 +464,12 @@ Player.prototype.checkEdge = function() {
         b = BOUNCE;
 
     if ((tx - g.ctrX + r) < GRID.xMin) {
-        this.loc.x += b}
-    else if ((tx + g.ctrX - r) > GRID.xMax) {
-        this.loc.x -= b}
-    else if ((ty) < GRID.yMin) {
-        this.loc.y += b}
-    else if ((ty + g.ctrY) > GRID.yMax){
+        this.loc.x += b
+    } else if ((tx + g.ctrX - r) > GRID.xMax) {
+        this.loc.x -= b
+    } else if ((ty) < GRID.yMin) {
+        this.loc.y += b
+    } else if ((ty + g.ctrY) > GRID.yMax){
         this.loc.y -= b};
 }
 
@@ -472,9 +480,7 @@ Player.prototype.checkEnemies = function() {
     for (var i = 0; i < b.length; i++){
         if (Math.sqrt(Math.pow(a.x-b[i].loc.x,2) + Math.pow(a.y-b[i].loc.y,2))<60){
             game.death();
-        }
-    }
-}
+}}}
 
 
 
