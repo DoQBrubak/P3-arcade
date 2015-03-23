@@ -78,50 +78,25 @@ var SPLASH = {
             'Press >SPACE< to play again.']
 }};
 
-
-
-
-
-//var player = new Player('horn');
-
-/* This object stores properties and capabilities relevant to
- * the state of the game.
- */
-
-
- /*
-var game = {
-    state: "preGame",
-    score: 0,
-    leader: "cat",
-    team: ["horn","pink","pink","cat"],
-    level: 1,
-    toggle: function(stateIn) {
-        var map = {
-            preGame:"inGame",
-            inGame:"pauseGame",
-            pauseGame: "inGame",
-            postGame: "inGame"
-        };
-        this.state = map[stateIn];
-    },
-    death: function() {
-        console.log("Death!");
-        player.whichGirl = 'cat';
-        player.loc = PLAYER_START_LOC;
-        /*if (this.team.length == 0) {this.state = "postGame"}
-        else (player = new Player(this.team.shift()));
-    },
-    init: function() {
-        player = new Player('horn');
-        map = new Map(NUM_OF_ROWS,NUM_OF_COLS);
-        map.generate(0.3,0.3);
-        enemies = new Collection();
-        for (var i=0; i<3; i++) {enemies.members.push(new Enemy())};
-        //goodies = new Collection();
-    }
+var URLS = {
+    'block': 'images/block-%data%.png',
+    'teamMate': 'images/girl-%data%-sm.png'
 };
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 var Game = function() {
@@ -139,10 +114,18 @@ var Game = function() {
 };
 
 Game.prototype.render = function() {
+    // First render the FRAME.
     ctx.fillStyle = COLORS.frame;
     for (var i = 0; i < FRAME.length; i++) {
         ctx.fillRect(FRAME[i][0], FRAME[i][1], FRAME[i][2], FRAME[i][3]);
     }
+    // Then render the DASHBOARD.
+    for (var i = 0; i < this.teamNow.length; i++) {
+        ctx.drawImage(Resources.get(URLS.teamMate.replace('%data%',this.teamNow[i])),600+i*50,-15);
+    }
+    ctx.strokeText("SCORE: " + this.score, 10, 35);
+    ctx.strokeText("LEVEL: "+ this.level, 250, 35);
+    ctx.strokeText("TEAM: ", 500, 35);
 }
 
 Game.prototype.init = function() {
@@ -187,23 +170,59 @@ Game.prototype.splash = function() {
 
 
 
-
-
-
-var Dash = function(level,score,roster) {
-    this.reportLevel = ["Level: "+level,20,20];
-    this.reportScore = ["Score: "+score,40,20];
-    this.roster = roster;
-    this.teamUrl = 'images/girl-%data%-sm.png';
-    this.txtColor = COLORS.txt1;
-    this.txtFont =  "18px Arial"
-};
-    
-Dash.prototype.render = function() {
-    for (var i = 0; i < this.roster.length; i++){
-        ctx.drawImage(Resources.get(this.teamUrl.replace('%data%',this.roster[i])),500+i*50,0);
-    }
+/* A Map-class instance is comprised of an array-of-arrays matrix in which
+ * the first- and second- order indeces correspond to the row and column
+ * identities for Tile objects, which are stored in the scecond-order
+ * array.
+ * A Map does not currently have any sub- or super-classes.
+ */
+var Map = function(numRows, numCols) {
+    this.numRows = numRows;
+    this.numCols = numCols;
+    this.matrix = [];
 }
+
+Map.prototype.render = function(){
+    for (var i = 0; i < this.numRows; i++) {
+        for (var j =0; j < this.numCols; j++) {
+            this.matrix[i][j].render();
+}}}
+
+Map.prototype.generate = function(pWater,pStone){
+    var x = []; // An array
+    for (var i = 0; i < this.numRows; i ++) {
+        x[i] = [];
+        for (var j = 0; j < this.numCols; j++) {
+            var y;
+                m = Math.random();
+            if (i==0) {
+                if (j==0) {y = 'grass'}
+                else {y = 'water'}
+            } else if (i == (this.numRows - 1) && j == (this.numCols - 1)) {
+                y = 'stone'
+            } else {
+                y = (m < pWater ? 'water' : m > (1 - pStone) ? 'stone' : 'grass');
+            }
+            x[i][j] = y;
+    }}
+
+    /* This builds the matrix full of Tile objects based on 
+     * the draft matrix full of strings.
+     */
+    for (var i = 0; i < this.numRows; i ++) {
+        this.matrix[i] = [];
+        for (var j = 0; j < this.numCols; j++) {
+            this.matrix[i][j] = new Tile(i, j, x[i][j]);
+    }}
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -218,15 +237,15 @@ Dash.prototype.render = function() {
 var Collection = function (dt){
     this.members = [];
 }
-/* A Collection instance can be called upon to update() itself, and it
- * perfoms this by calling the udpate() function of each of its members.
+/* A Collection can update() itself, by calling the update() method
+ * of each of its members.
  */
 Collection.prototype.update = function() {
     for(var i=0; i<this.members.length; i++) {
         this.members[i].update();
 }}
-/* A Collection instance can be called upon to render() itself, and it
- * perfoms this by calling the render() function of each of its members.
+/* A Collection can render() itself, by calling the render() method
+ * of each of its members.
  */
 Collection.prototype.render = function() {
     for (var i=0; i < this.members.length; i++) {
@@ -242,55 +261,6 @@ Collection.prototype.render = function() {
 
 
 
-
-
-
-
-/* A Map is comprised of a matrix (Array of Arrays), in which each 
- * first- and second- order index corresponds to the row and col 
- * identities for Tile objects stored therein.
- * It does not currently have any sub- or super-classes.
- */
-var Map = function(NUM_OF_ROWS, NUM_OF_COLS) {
-    this.NUM_OF_ROWS = NUM_OF_ROWS;
-    this.NUM_OF_COLS = NUM_OF_COLS;
-    this.matrix = [];
-}
-
-
-Map.prototype.render = function(){
-    for (var i = 0; i < this.NUM_OF_ROWS; i++) {
-        for (var j =0; j < this.NUM_OF_COLS; j++) {
-            this.matrix[i][j].render();
-}}}
-
-Map.prototype.generate = function(pWater,pStone){
-    var x = []; // An array
-    for (var i = 0; i < this.NUM_OF_ROWS; i ++) {
-        x[i] = [];
-        for (var j = 0; j < this.NUM_OF_COLS; j++) {
-            var y;
-                m = Math.random();
-            if (i==0) {
-                if (j==0) {y = 'grass'}
-                else {y = 'water'}
-            } else if (i == (NUM_OF_ROWS - 1) && j == (NUM_OF_COLS-1)) {
-                y = 'stone'
-            } else {
-                y = (m < pWater ? 'water' : m > (1 - pStone) ? 'stone' : 'grass');
-            }
-            x[i][j] = y;
-    }}
-
-    /* This builds the matrix full of Tile objects based on 
-     * the draft matrix full of strings.
-     */
-    for (var i = 0; i < this.NUM_OF_ROWS; i ++) {
-        this.matrix[i] = [];
-        for (var j = 0; j < this.NUM_OF_COLS; j++) {
-            this.matrix[i][j] = new Tile(i, j, x[i][j]);
-    }}
-};
 
 
 
@@ -340,12 +310,9 @@ var Tile = function(rowID, colID, groundType) {
     var geom = TILE_GEOM;
     Entity.call(
         this,
-        {
-            x:(colID*COL_WIDTH+geom.ctrX),
-            y:(rowID*ROW_HEIGHT+geom.ctrY-50)
-        },
-        'images/block-%data%.png'.replace('%data%', groundType),
-        geom);
+        {x:(colID*COL_WIDTH+geom.ctrX), y:(rowID*ROW_HEIGHT+geom.ctrY-50)},
+        URLS.block.replace('%data%', groundType),
+        TILE_GEOM);
     this.rowID = rowID;
     this.colID = colID;
     this.groundType = groundType;
@@ -359,7 +326,7 @@ Tile.prototype.constructor = Tile;
 
 
 
-
+/* THE GOODY CLASS IS NOT YET IN SERVICE
 
 var Goody = function(geom, rowID, colID, goodyType, grabEffect) {
     Entity.call(
@@ -375,7 +342,7 @@ var Goody = function(geom, rowID, colID, goodyType, grabEffect) {
 Goody.prototype = Object.create(Entity.prototype);
 Goody.prototype.constructor = Goody;
 
-
+*/
 
 
 
@@ -401,30 +368,26 @@ var Living = function(loc, imgUrl, geom, speed) {
 Living.prototype = Object.create(Entity.prototype);
 Living.prototype.constructor = Living;
 
-
 Living.prototype.checkGround = function(map){
     var row, col;
     row = Math.floor(this.loc.y / ROW_HEIGHT);
     col = Math.floor(this.loc.x / COL_WIDTH);
     if (map.matrix[Number(row)][Number(col)] && Math.random()<0.05) {
         console.log( aMap.matrix[row][col].groundType );
-    }
-}
+}}
 
-/* The update function for a given entity will run a number of functions to 
- * evaluate for changes in its status before finally actually updating its 
- * location.
+/* The update() method for a Living Entity will perform several secondary
+ * methods to evaluate for changes in its status before  actually updating
+ * its location.
  */ 
 Living.prototype.update = function() {
-    /* checkEdge is defined separately for Player and Enemy, and leads to 
-    * different results for these two main Entity types.
-    */
+    // Note that checkEdge() is defined differently in the Player and Enemy classes.
     this.checkEdge();
     //this.checkGround();
     this.move();
 }
 
-// Actually move the living thing's location.
+// Actually adjust the living thing's location.
 Living.prototype.move = function() {
     this.loc.x += (this.speed * this.veloc.x);
     this.loc.y += (this.speed * this.veloc.y);
@@ -439,11 +402,8 @@ Living.prototype.move = function() {
 
 
 
-
-
 /* Player is a subclass of Living, which is a subclass of Entity.
- * A Player instance can only be initialized with a "whichGirl"
- * argument.
+ * A Player must be initialized with a "whichGirl" argument.
  */
 var Player = function(whichGirl) {
     Living.call(

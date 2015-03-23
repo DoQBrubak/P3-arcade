@@ -3,15 +3,9 @@
  * draws the initial game board on the screen, and then calls the update and
  * render methods on your player and enemy objects (defined in your app.js).
  *
- * A game engine works by drawing the entire game screen over and over, kind of
- * like a flipbook you may have created as a kid. When your player moves across
- * the screen, it may look like just that image/character is moving or being
- * drawn but that is not the case. What's really happening is the entire "scene"
- * is being drawn over and over, presenting the illusion of animation.
- *
- * This engine is available globally via the Engine variable and it also makes
- * the canvas' context (ctx) object globally available to make writing app.js
- * a little simpler to work with.
+ * This engine is available globally via the Engine variable and also makes
+ * the canvas' context object globally available globally (most importantly,
+ * to app.js).
  */
 
 var Engine = (function(global) {
@@ -29,23 +23,15 @@ var Engine = (function(global) {
     canvas.height = CANVAS.height;
     doc.body.appendChild(canvas);
 
-
-
-    /* This function does setup that occurs once, and establishes the 
+    /* init() performs one-time pregame setup, and establishes the
      * lastTime variable that is required for the game loop.
      */
     function init() {
         lastTime = Date.now();
         theGame = new Game();
         theGame.init();
-        //game.init();
-        //TODO: Move both Frame and Dash into Game class.
-        //theFrame = new Frame();
-        theDash = new Dash(theGame.level,theGame.score,theGame.teamNow);
         main();
     }
-
-
 
     /* main() kicks off the game loop itself, and handles properly calling
      * the update and render methods.
@@ -85,10 +71,9 @@ var Engine = (function(global) {
         if (spin < 0.005) enemies.members.push(new Enemy());
     }
 
-
     /* render() gets called by main() once per iteration of the Engine.
      * If the the game state is not "inGame,", it draws the splash screen.
-     * Otherwise it renders the map, frame, and entities.
+     * Otherwise it renders the map, entities and Game layout.
      */
     function render() {
         if (theGame.state != "inGame") {
@@ -115,27 +100,12 @@ var Engine = (function(global) {
         thePlayer.render();
         
         theGame.render();
-        theDash.render();
+        //theDash.render();
         }
     }
 
-
-/*
-    function scoreboard() {
-        ctx.fillStyle = SPLASH.txtcolor;
-        ctx.fillRect()
-    }
-
-    function makeFrame() {
-        ctx.fillStyle = SPLASH.txtcolor;
-        ctx.fillRect(DASH.xMin,DASH.yMin,DASH.xMax,50);
-    }
-    */
-    
-
-    /* Go ahead and load all of the images we know we're going to need to
-     * draw our game level. Then set init as the callback method, so that when
-     * all of these images are properly loaded our game will start.
+    /* Load the images needed to draw the game. Then set init() as the callback
+     * method, so when these images are done loading the game will begin.
      */
     Resources.load([
         'images/block-stone.png',
@@ -160,3 +130,4 @@ var Engine = (function(global) {
      */
     global.ctx = ctx;
 })(this);
+
