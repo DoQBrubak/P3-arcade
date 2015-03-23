@@ -31,7 +31,7 @@ var Engine = (function(global) {
 
 
 
-    /* This function does setup that only occurs once, and sets the 
+    /* This function does setup that occurs once, and establishes the 
      * lastTime variable that is required for the game loop.
      */
     function init() {
@@ -46,62 +46,68 @@ var Engine = (function(global) {
 
 
 
-    /* This function serves as the kickoff point for the game loop itself
-     * and handles properly calling the update and render methods.
+    /* main() kicks off the game loop itself, and handles properly calling
+     * the update and render methods.
      */
     function main() {
         // Determine time delta, which copes for diffeing processing speeds. 
-        var now = Date.now(),  // refer: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
+        var now = Date.now(),
             dt = (now - lastTime) / 1000.0;
 
-        /* Call update() and render(), providing time delta to update() since
-         * it may be used for smooth animation.
+        /* Call update() and render() methods within the Engine scope,
+         * providing dt for smoother rendering.
          */
         update(dt);
         render();
 
-        /* Set lastTime, which will be referrenced the next time dt gets 
-         * calculated, the next time main() is called.
+        /* Set lastTime, which will be referrenced the next time dt gets
+         * calculated, during the next iteration of main().
          */
         lastTime = now;
 
-        /* Use the browser's requestAnimationFrame function to call this
-         * function again as soon as the browser is able to draw another frame.
+        /* Use browser's requestAnimationFrame function to call main()
+         * once more, as soon as the browser is able.
          */
         win.requestAnimationFrame(main);
-    };
+    }
 
-
-    /* This is called by main(). This calls all functions used to 
-     * update entities' data. Use of checkCollisions() is optional based on 
-     * how I choose to deal with entity collisions.
+    /* update() gets called by main() once per iteration of the Engine.
+     * This calls all functions necessary to update entities' status.
      */
     function update(dt) {
+        // spin assists with random enemy generation
         var spin = Math.random();
         enemies.update(dt);
         thePlayer.checkEdge();
         thePlayer.checkEnemies();
         thePlayer.update(dt);
-        if (spin < 0.002) enemies.members.push(new Enemy());
+        if (spin < 0.005) enemies.members.push(new Enemy());
     }
 
 
-    /* This function draws the landscape, then calls renderEntities() to draw 
-     * all the sprites. This is called once per tick of the game engine.
+    /* render() gets called by main() once per iteration of the Engine.
+     * If the the game state is not "inGame,", it draws the splash screen.
+     * Otherwise it renders the map, frame, and entities.
      */
     function render() {
-
         if (theGame.state != "inGame") {
             renderSplash(theGame.state);
         } else {
 
-        // Render the map.
+       /* Render the map. This comes first because the map is permanently
+        * "under" everything else.
+        */
         theMap.render();
-        
-        //Render the goodies.
-        //goodies.render();
 
-        // Render the buggies.
+       /* Render the goodies. This comes next because the moving entities can
+        * walk "over" the goodies. 
+        */
+        // TODO: build out Goodies class, Collection, and functionality.
+        //theGoodies.render();
+
+       /* Render the bugs. This comes next because the bugs appear "under" the 
+        * player sprite.
+        */
         enemies.render();
 
         // Render the player.
