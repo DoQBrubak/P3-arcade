@@ -466,6 +466,7 @@ Player.prototype.checkEnemies = function() {
 
 
 
+
 /* Enemy is a subclass of Entity/Living inheritance.
  */
 var Enemy = function () {
