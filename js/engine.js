@@ -62,13 +62,12 @@ var Engine = (function(global) {
      * This calls all functions necessary to update entities' status.
      */
     function update(dt) {
-        // spin assists with random enemy generation
-        var spin = Math.random();
         enemies.update(dt);
-        thePlayer.checkEdge();
-        thePlayer.checkEnemies();
         thePlayer.update(dt);
-        if (spin < 0.005) enemies.members.push(new Enemy());
+        // spin assists with random enemy generation until I have a better
+        // mechanism for that.
+        var spin = Math.random();
+        if (spin < 0.003) enemies.members.push(new Enemy());
     }
 
     /* render() gets called by main() once per iteration of the Engine.
@@ -78,7 +77,6 @@ var Engine = (function(global) {
     function render() {
         if (theGame.state != "inGame") {
             theGame.splash();
-
         } else {
         /* Render the map. This comes first because the map is permanently
          * "under" everything else.

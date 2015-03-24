@@ -11,6 +11,10 @@ Array.prototype.pickRand = function() {
 };
 
 
+
+
+
+
 /* These are the constants. Note that GRID, CANVAS, FRAME,
  * and PLAYER_START_LOC are dependent on higher constants.
  */
@@ -49,9 +53,9 @@ var FRAME = [
     [0,CANVAS.height,CANVAS.width,-FRAME_THICKNESS]
 ];
 
-var PLAYER_SPEED = 6;
+var PLAYER_SPEED = 5;
 var PLAYER_START_LOC =  {x:(COL_WIDTH/2), y:(ROW_HEIGHT/2)};
-var BOUNCE = 11;
+var BOUNCE = 7;
 
 var ENEMY_GEOM = {ctrX:50, ctrY:42, radius:35};
 var TILE_GEOM = {ctrX:50, ctrY:83, radius:0};
@@ -79,18 +83,20 @@ var SPLASH = {
 }};
 
 var URLS = {
-    'block': 'images/block-%data%.png',
-    'teamMate': 'images/girl-%data%-sm.png'
+    'bug': 'images/bug-%data%.png',
+    'girlLg': 'images/girl-%data%-lg.png',
+    'girlSm': 'images/girl-%data%-sm.png',
+    'tile': 'images/block-%data%.png',
 };
 
+GROUND_FACTOR = {
+    "grass": {"player":0.8,"bug":0.4},
+    "water": {"player":0.2,"bug":1.0}, 
+    "stone": {"player":1.0,"bug":0.8}
+};
 
-
-
-
-
-
-
-
+var memo1 = ""; // This will change through the testing process
+var memo2 = ""; // Likewise
 
 
 
@@ -121,11 +127,13 @@ Game.prototype.render = function() {
     }
     // Then render the DASHBOARD.
     for (var i = 0; i < this.teamNow.length; i++) {
-        ctx.drawImage(Resources.get(URLS.teamMate.replace('%data%',this.teamNow[i])),600+i*50,-15);
+        ctx.drawImage(Resources.get(URLS.girlSm.replace('%data%',this.teamNow[i])),550+i*50,-15);
     }
     ctx.strokeText("SCORE: " + this.score, 10, 35);
     ctx.strokeText("LEVEL: "+ this.level, 250, 35);
-    ctx.strokeText("TEAM: ", 500, 35);
+    ctx.strokeText("TEAM: ", 450, 35);
+    ctx.strokeText(memo1, 650, 15);
+    ctx.strokeText(memo2, 650, 40);
 }
 
 Game.prototype.init = function() {
@@ -141,6 +149,7 @@ Game.prototype.toggle = function(state) {
 }
 
 Game.prototype.death = function() {
+    thePlayer = new Player(this.playerNow);
     console.log("Death");
 }
 
@@ -154,12 +163,8 @@ Game.prototype.splash = function() {
     ctx.fillStyle = COLORS.txt1;
     ctx.font = "30px Arial";
     ctx.strokeText(SPLASH.msg[this.state][0],150,100);
-    ctx.strokeText(SPLASH.msg[this.state][1],150,150); 
+    ctx.strokeText(SPLASH.msg[this.state][1],150,150);
 }
-
-
-
-
 
 
 
@@ -189,9 +194,9 @@ Map.prototype.render = function(){
 }}}
 
 Map.prototype.generate = function(pWater,pStone){
-    var x = []; // An array
+    var preMatrix = []; // An empty array
     for (var i = 0; i < this.numRows; i ++) {
-        x[i] = [];
+        preMatrix[i] = [];
         for (var j = 0; j < this.numCols; j++) {
             var y;
                 m = Math.random();
@@ -203,25 +208,17 @@ Map.prototype.generate = function(pWater,pStone){
             } else {
                 y = (m < pWater ? 'water' : m > (1 - pStone) ? 'stone' : 'grass');
             }
-            x[i][j] = y;
+            preMatrix[i][j] = y;
     }}
 
     /* This builds the matrix full of Tile objects based on 
-     * the draft matrix full of strings.
+     * the draft preMatrix full of strings.
      */
     for (var i = 0; i < this.numRows; i ++) {
         this.matrix[i] = [];
         for (var j = 0; j < this.numCols; j++) {
-            this.matrix[i][j] = new Tile(i, j, x[i][j]);
-    }}
-};
-
-
-
-
-
-
-
+            this.matrix[i][j] = new Tile(i, j, preMatrix[i][j]);
+}}}
 
 
 
@@ -274,14 +271,18 @@ Collection.prototype.render = function() {
 /* The Enemy, Player and Tile classes have several attributes in common, 
  * which are factored out into a Entity class constructor.
  */
-var Entity = function(loc, imgUrl, geom) {
+var Entity = function(loc, imgUrl, geom, ground) {
     // The entity's coordinates as an Object: {x:val,y:val}
     this.loc = loc;
     // The entity's url source
     this.imgUrl = imgUrl;
     // This describes geometry relevant to collisions and other gameplay.
     this.geom = geom;
-};
+    /* This indicates the ground the Entity IS in the case of Tiles,
+     * or IS STANDING ON in the case of Living things.
+     */
+    this.ground = ground;
+}
 
 // Any Entity can be called on to render itself.
 Entity.prototype.render = function() {
@@ -289,8 +290,7 @@ Entity.prototype.render = function() {
         Resources.get(this.imgUrl),
         GRID.xMin + this.loc.x - this.geom.ctrX,
         GRID.yMin + this.loc.y - this.geom.ctrY
-    );
-};
+);}
 
 
 
@@ -306,17 +306,19 @@ Entity.prototype.render = function() {
  * characteristics in common with Tile, I may create "Living" and
  * "NonLiving" subclasses.
  */
-var Tile = function(rowID, colID, groundType) {
+var Tile = function(rowID, colID, ground) {
     var geom = TILE_GEOM;
     Entity.call(
         this,
-        {x:(colID*COL_WIDTH+geom.ctrX), y:(rowID*ROW_HEIGHT+geom.ctrY-50)},
-        URLS.block.replace('%data%', groundType),
-        TILE_GEOM);
+        {x:(colID*COL_WIDTH+geom.ctrX), y:(rowID*ROW_HEIGHT+geom.ctrY-50)}, // Entity.loc
+        URLS.tile.replace('%data%', ground), // Entity.imgUrl
+        TILE_GEOM, // Entity.geom
+        ground // Entity.ground
+    ); 
     this.rowID = rowID;
     this.colID = colID;
-    this.groundType = groundType;
 }
+// This validates Tile as a subclass of Entity
 Tile.prototype = Object.create(Entity.prototype);
 Tile.prototype.constructor = Tile;
 
@@ -355,12 +357,14 @@ Goody.prototype.constructor = Goody;
 /* This is a class for all Living things. This is a subclass 
  * of Entity that is super to all classes of things that move around.
  */
-var Living = function(loc, imgUrl, geom, speed) {
+var Living = function(loc, imgUrl, geom, ground, speed) {
     Entity.call(
         this,
-        loc,
-        imgUrl,
-        geom);
+        loc, // Entity.loc
+        imgUrl, // Entity.imgUrl
+        geom, // Entity.geom
+        ground // Entity.ground
+    );
     this.speed = speed;
     this.isInBounds = true;
 };
@@ -372,26 +376,19 @@ Living.prototype.checkGround = function(map){
     var row, col;
     row = Math.floor(this.loc.y / ROW_HEIGHT);
     col = Math.floor(this.loc.x / COL_WIDTH);
-    if (map.matrix[Number(row)][Number(col)] && Math.random()<0.05) {
-        console.log( aMap.matrix[row][col].groundType );
-}}
-
-/* The update() method for a Living Entity will perform several secondary
- * methods to evaluate for changes in its status before  actually updating
- * its location.
- */ 
-Living.prototype.update = function() {
-    // Note that checkEdge() is defined differently in the Player and Enemy classes.
-    this.checkEdge();
-    //this.checkGround();
-    this.move();
+    if (theMap.matrix[row][col] !== undefined) {
+        this.ground = theMap.matrix[row][col].ground
+    } else {
+        this.ground = "grass";
+    }
 }
 
-// Actually adjust the living thing's location.
-Living.prototype.move = function() {
-    this.loc.x += (this.speed * this.veloc.x);
-    this.loc.y += (this.speed * this.veloc.y);
-};
+// Actually adjust the Living Entity's location.
+Living.prototype.move = function(species) {
+    var multiplier = GROUND_FACTOR[this.ground][species];
+    this.loc.x += (this.speed * this.veloc.x * multiplier);
+    this.loc.y += (this.speed * this.veloc.y * multiplier);
+}
 
 
 
@@ -403,20 +400,22 @@ Living.prototype.move = function() {
 
 
 /* Player is a subclass of Living, which is a subclass of Entity.
- * A Player must be initialized with a "whichGirl" argument.
+ * A Player must be initialized with a "personality" argument.
  */
-var Player = function(whichGirl) {
+var Player = function(personality) {
     Living.call(
         this,
-        PLAYER_START_LOC, 
-        'images/girl-%data%-lg.png'.replace('%data%',whichGirl),
-        geom = {ctrX:50 , ctrY:115, radius: 35},
-        PLAYER_SPEED
+        PLAYER_START_LOC, // Entity/Living.loc
+        URLS.girlLg.replace('%data%',personality), // Entity/Living.imgUrl
+        {ctrX:50 , ctrY:115, radius: 35}, // Entity/Living.geom
+        "grass", // Entity/Living.ground
+        PLAYER_SPEED // Living.speed
     );
     this.veloc = {x:0, y:0};
-    this.whichGirl = whichGirl;
-};
-// These validates Player as a sub-class of Living.
+    this.personality = personality;
+}
+
+// These validate Player as a sub-class of Living.
 Player.prototype = Object.create(Living.prototype);
 Player.prototype.constructor = Player;
 
@@ -426,6 +425,18 @@ Player.prototype.handleInput = function(key, onOff) {
     this.veloc.y = ((key == 'down') * onOff) - ((key == 'up') * onOff); 
     if (onOff == 0) {this.veloc = {x:0, y:0};
 }}
+
+/* The update() method for a Living Entity will perform several secondary
+ * methods to evaluate for changes in its status before  actually updating
+ * its location.
+ */ 
+Player.prototype.update = function() {
+    this.checkEdge();
+    this.checkEnemies();
+    this.checkGround(); // Inherited from Living class
+    memo1 = this.ground; //
+    this.move("player"); // Inherited from Living class
+}
 
 /* The checkEdge function keeps the player in bounds by immediately updating her 
  * position if she encounters a screen edge.
@@ -453,7 +464,9 @@ Player.prototype.checkEnemies = function() {
         b = enemies.members;
     for (var i = 0; i < b.length; i++){
         if (Math.sqrt(Math.pow(a.x-b[i].loc.x,2) + Math.pow(a.y-b[i].loc.y,2))<60){
-            game.death();
+            memo2 = "DEATH by bug"; return
+        } else {
+            memo2 = "ALIVE and well";
 }}}
 
 
@@ -477,14 +490,13 @@ var Enemy = function () {
     // Call the superclass to build out an instance
     Living.call(
         this,
-        loc = {
-            x: (direction == 'right' ? (GRID.xMin - COL_WIDTH) : (GRID.xMax + COL_WIDTH)),
-            y: (row-1)*ROW_HEIGHT+geom.ctrY
-        },
-        'images/bug-%data%.png'.replace('%data%',direction),
-        ENEMY_GEOM,
-        speed = (direction == 'right' ? 1 : -1) * [1,2,2].pickRand() 
-        ); 
+        loc = {x: (direction == 'right' ? (GRID.xMin - COL_WIDTH) : (GRID.xMax + COL_WIDTH)),
+               y: (row-1)*ROW_HEIGHT+ENEMY_GEOM.ctrY}, // >>Entity/Living.loc
+        URLS.bug.replace('%data%',direction), // >>Entity/Living.imgUrl
+        ENEMY_GEOM, // >>Entity/Living.geom
+        "grass", // >>Entity/Living.ground
+        speed = (direction == 'right' ? 1 : -1) * [1,2,2,3].pickRand() // >>Living.speed
+    );
     this.row = row;
     this.direction = direction;
     this.speed = speed;
@@ -494,7 +506,15 @@ var Enemy = function () {
 Enemy.prototype = Object.create(Living.prototype);
 Enemy.prototype.constructor = Enemy;
 
-
+/* The update() method for a Enemy Entity will perform several secondary
+ * methods to evaluate for changes in its status before  actually updating
+ * its location.
+ */ 
+Enemy.prototype.update = function() {
+    this.checkEdge();
+    this.checkGround();
+    this.move("bug");
+}
 
 /* The Enemy checkEdge function is unlike that for the Player in that it 
  * leads to the extenction - rather than repositioning - of said Enemy.
@@ -502,8 +522,7 @@ Enemy.prototype.constructor = Enemy;
 Enemy.prototype.checkEdge = function() {
     if (this.loc.x < (GRID.xMin - (2*COL_WIDTH)) || this.loc.x > GRID.xMax + (2*COL_WIDTH)) {
         this.isInBounds = false;
-    }
-}
+}}
 
 
 
@@ -524,13 +543,11 @@ Enemy.prototype.checkEdge = function() {
  * strings, and sends a string to Player.handleInput()
  */
 var validKeys = {
-        37: 'left',
-        38: 'up',
-        39: 'right',
-        40: 'down',
-        32: 'space'
-    };
-
+    37: 'left',
+    38: 'up',
+    39: 'right',
+    40: 'down',
+    32: 'space'};
 
 document.addEventListener('keydown', function(e) {
     thePlayer.handleInput(validKeys[e.keyCode], true);
